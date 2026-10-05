@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shree Jagannath Seva Trust - Donation & Receipt System</title>
+    <meta name="description" content="Donation collection and digital receipt system for Shree Jagannath Seva Trust" />
+    <script>
+      (function() {
+        try {
+          var originalFetch = window.fetch;
+          var customFetch = originalFetch;
+          Object.defineProperty(window, 'fetch', {
+            get: function() {
+              return customFetch || originalFetch;
+            },
+            set: function(fn) {
+              customFetch = fn;
+            },
+            configurable: true,
+            enumerable: true
+          });
+        } catch (e) {
+          try {
+            if (typeof Window !== 'undefined' && Window.prototype) {
+              var protoFetch = Window.prototype.fetch;
+              var customProtoFetch = protoFetch;
+              Object.defineProperty(Window.prototype, 'fetch', {
+                get: function() {
+                  return customProtoFetch || protoFetch;
+                },
+                set: function(fn) {
+                  customProtoFetch = fn;
+                },
+                configurable: true,
+                enumerable: true
+              });
+            }
+          } catch (e2) {}
+        }
+      })();
+    </script>
+    <meta property="og:title" content="Shree Jagannath Seva Trust - Donation & Receipt System" />
+    <meta property="og:description" content="Donation collection and digital receipt generation system for Shree Jagannath Seva Trust with email receipt delivery and Google Sheets synchronization." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

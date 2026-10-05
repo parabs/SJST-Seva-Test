@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@media print {
+  @page {
+    size: 210mm 105mm landscape;
+    margin: 0;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #compact-digital-receipt, #compact-digital-receipt *,
+  #digital-donation-receipt, #digital-donation-receipt * {
+    visibility: visible;
+  }
+  #compact-digital-receipt, #digital-donation-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 210mm !important;
+    max-width: 210mm !important;
+    height: 105mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+}

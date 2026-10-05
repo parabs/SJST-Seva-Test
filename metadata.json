@@ -1,0 +1,6 @@
+{
+  "name": "Shree Jagannath Seva Trust - Donation & Receipt System",
+  "description": "Donation collection and digital receipt generation system for Shree Jagannath Seva Trust with email receipt delivery and Google Sheets synchronization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
