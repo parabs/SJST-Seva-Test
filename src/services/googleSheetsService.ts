@@ -1,13 +1,27 @@
 import { DonationRecord, TrustConfig, VolunteerRecord } from '../types';
 import {
-  BACKEND_URL,
-  loadAppConfig
+  loadAppConfig,
+  getConfiguredBackendUrl
 } from './appConfig';
 
-export const TARGET_WEBHOOK_URL = BACKEND_URL;
+async function getBackendUrl(): Promise<string> {
 
-export const DEFAULT_WEBHOOK_URL = BACKEND_URL;
+  const config =
+    await loadAppConfig();
 
+  const backendUrl =
+    config.api?.backendUrl?.trim();
+
+  if (!backendUrl) {
+
+    throw new Error(
+      'Application configuration is missing api.backendUrl.'
+    );
+
+  }
+
+  return backendUrl;
+}
 
 export interface GoogleSheetsSyncConfig {
   spreadsheetId?: string;
@@ -32,10 +46,17 @@ async function getConfiguredSpreadsheetId(): Promise<string> {
 }
 
 export const DEFAULT_SHEETS_CONFIG: GoogleSheetsSyncConfig = {
-  spreadsheetId:  localStorage.getItem('sjst_sheets_spreadsheet_id') || '',
-  sheetName: 'Donations',
-  webhookUrl: (localStorage.getItem('sjst_sheets_webhook_url') || '').trim(),
-  autoSync: true
+  spreadsheetId:
+    localStorage.getItem('sjst_sheets_spreadsheet_id') || '',
+
+  sheetName:
+    'Donations',
+
+  webhookUrl:
+    '',
+
+  autoSync:
+    true
 };
 
 /**
@@ -381,11 +402,11 @@ export async function syncDonationToGoogleSheet(
   const isDirectVolunteerEntry =
     options?.directVolunteerEntry === true;
 
-  const webhookUrl = (
-    config.webhookUrl ||
-    localStorage.getItem('sjst_sheets_webhook_url') ||
-    DEFAULT_WEBHOOK_URL
-  )?.trim();
+  const configuredBackendUrl =
+    await getBackendUrl();
+
+  const webhookUrl =
+    configuredBackendUrl;
 
   const spreadsheetId =
     await getConfiguredSpreadsheetId();
@@ -905,9 +926,7 @@ export async function fetchDashboardCalculation(
 }> {
   const configuredSpreadsheetId = await getConfiguredSpreadsheetId();
   try {
-    const webhookUrl =
-      localStorage.getItem('sjst_sheets_webhook_url') ||
-      DEFAULT_WEBHOOK_URL;
+    const webhookUrl = getConfiguredBackendUrl();
 
     const sheetName = 'Calculation';
     const range = formatA1Range(sheetName, 'A1:E77');
@@ -993,7 +1012,7 @@ export async function fetchDonationsFromGoogleSheet(
   spreadsheetId?.trim() ||
   await getConfiguredSpreadsheetId();
   try {
-    const webhookUrl = localStorage.getItem('sjst_sheets_webhook_url') || DEFAULT_WEBHOOK_URL;
+    const webhookUrl = getConfiguredBackendUrl();
     let allRows: any[][] = [];
 
     // If no access token is present, fetch via the Google Apps Script Webhook (GET)
@@ -1141,7 +1160,7 @@ export async function fetchPendingVerificationQueue(): Promise<{
   error?: string;
 }> {
   try {
-    const webhookUrl = DEFAULT_WEBHOOK_URL;
+    const webhookUrl = await getBackendUrl();
   
     const separator = webhookUrl.includes('?') ? '&' : '?';
 
@@ -1187,7 +1206,7 @@ export async function fetchPendingVerificationQueue(): Promise<{
  * Direct Token-less Volunteer Verification via Webhook
  * Designed for opaque 'no-cors' responses from Google Apps Script. */
 export async function verifyDonationByPin(confirmationCode: string, volunteerName: string) {
-  const webhookUrl = DEFAULT_WEBHOOK_URL;
+  const webhookUrl = await getBackendUrl();
 
   try {
     const response = await fetch(webhookUrl, {
@@ -1236,7 +1255,8 @@ export async function authenticateVolunteer(
   };
   error?: string;
 }> {
-  const webhookUrl = DEFAULT_WEBHOOK_URL;
+  const webhookUrl =
+  await getConfiguredBackendUrl();
 
   try {
     const response = await fetch(webhookUrl, {
@@ -1297,7 +1317,8 @@ export async function addVolunteer(
   message?: string;
   error?: string;
 }> {
-  const webhookUrl = DEFAULT_WEBHOOK_URL;
+  const webhookUrl =
+  await getConfiguredBackendUrl();
 
   try {
     const response = await fetch(webhookUrl, {
@@ -1356,7 +1377,8 @@ export async function fetchVolunteers(): Promise<{
   }>;
   error?: string;
 }> {
-  const webhookUrl = DEFAULT_WEBHOOK_URL;
+  const webhookUrl =
+  await getConfiguredBackendUrl();
 
   try {
     const response = await fetch(webhookUrl, {
@@ -1403,7 +1425,8 @@ export async function sendVolunteerActivation(
   message?: string;
   error?: string;
 }> {
-  const webhookUrl = DEFAULT_WEBHOOK_URL;
+  const webhookUrl =
+  await getConfiguredBackendUrl();
 
   try {
     const response = await fetch(webhookUrl, {
@@ -1451,7 +1474,8 @@ export async function sendVolunteerPinReset(
   message?: string;
   error?: string;
 }> {
-  const webhookUrl = DEFAULT_WEBHOOK_URL;
+  const webhookUrl =
+  await getConfiguredBackendUrl();
 
   try {
     const response = await fetch(webhookUrl, {
@@ -1499,7 +1523,8 @@ export async function deleteVolunteer(
   message?: string;
   error?: string;
 }> {
-  const webhookUrl = DEFAULT_WEBHOOK_URL;
+  const webhookUrl =
+  await getConfiguredBackendUrl();
 
   try {
     const response = await fetch(webhookUrl, {
@@ -1547,7 +1572,8 @@ export async function disableVolunteer(
   message?: string;
   error?: string;
 }> {
-  const webhookUrl = DEFAULT_WEBHOOK_URL;
+  const webhookUrl =
+  await getConfiguredBackendUrl();
 
   try {
     const response = await fetch(webhookUrl, {
@@ -1595,7 +1621,8 @@ export async function reactivateVolunteer(
   message?: string;
   error?: string;
 }> {
-  const webhookUrl = DEFAULT_WEBHOOK_URL;
+  const webhookUrl =
+  await getConfiguredBackendUrl();
 
   try {
     const response = await fetch(webhookUrl, {
@@ -1657,7 +1684,8 @@ export async function adminUpdateVolunteer(
     status?: string;
   };
 }> {
-  const webhookUrl = DEFAULT_WEBHOOK_URL;
+  const webhookUrl =
+  await getConfiguredBackendUrl();
 
   try {
     const response = await fetch(webhookUrl, {
@@ -1710,7 +1738,8 @@ export async function requestVolunteerPinReset(
   message?: string;
   error?: string;
 }> {
-  const webhookUrl = DEFAULT_WEBHOOK_URL;
+  const webhookUrl =
+  await getConfiguredBackendUrl();
 
   try {
     const response = await fetch(webhookUrl, {
@@ -1771,7 +1800,8 @@ export async function updateVolunteerProfile(
     status: string;
   };
 }> {
-  const webhookUrl = DEFAULT_WEBHOOK_URL;
+  const webhookUrl =
+  await getConfiguredBackendUrl();
 
   try {
     const response = await fetch(webhookUrl, {
@@ -1824,7 +1854,8 @@ export async function resetVolunteerPin(
   message?: string;
   error?: string;
 }> {
-  const webhookUrl = DEFAULT_WEBHOOK_URL;
+  const webhookUrl =
+  await getConfiguredBackendUrl();
 
   try {
     const response = await fetch(webhookUrl, {
@@ -1996,7 +2027,6 @@ export function downloadCsvFile(content: string, fileName = 'SHREE_JAGANNATH_SEV
 export function saveSheetsConfig(config: GoogleSheetsSyncConfig) {
   if (config.spreadsheetId) localStorage.setItem('sjst_sheets_spreadsheet_id', config.spreadsheetId.trim());
   if (config.sheetName) localStorage.setItem('sjst_sheets_tab_name', config.sheetName.trim());
-  if (config.webhookUrl) localStorage.setItem('sjst_sheets_webhook_url', TARGET_WEBHOOK_URL);
   localStorage.setItem('sjst_sheets_auto_sync', config.autoSync ? 'true' : 'false');
 }
 
@@ -2007,7 +2037,7 @@ export function getSheetsConfig(): GoogleSheetsSyncConfig {
   return {
     spreadsheetId:  localStorage.getItem('sjst_sheets_spreadsheet_id') || '',
     sheetName: localStorage.getItem('sjst_sheets_tab_name') || 'Form Responses 1',
-    webhookUrl: localStorage.getItem('sjst_sheets_webhook_url') || DEFAULT_WEBHOOK_URL,
+    webhookUrl: '',
     autoSync: localStorage.getItem('sjst_sheets_auto_sync') !== 'false'
   };
 }

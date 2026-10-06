@@ -18,7 +18,10 @@ import {
 } from 'lucide-react';
 
 import { DonationRecord, VolunteerRecord, TrustConfig } from './types';
-import { loadAppConfig } from './services/appConfig';
+import {
+  loadAppConfig,
+  getConfiguredBackendUrl
+} from './services/appConfig';
 import { DonorForm } from './components/DonorForm';
 import { VolunteerPortal } from './components/VolunteerPortal';
 import { GoogleSheetView } from './components/GoogleSheetView';
@@ -279,7 +282,7 @@ function App() {
 
     try {
       await fetch(
-        googleSheetsService.DEFAULT_WEBHOOK_URL,
+        await getConfiguredBackendUrl(),
         {
           method: 'POST',
           headers: {
@@ -318,7 +321,7 @@ function App() {
   ): Promise<void> => {
     try {
       await fetch(
-        googleSheetsService.DEFAULT_WEBHOOK_URL,
+        await getConfiguredBackendUrl(),
         {
           method: 'POST',
           headers: {
@@ -367,7 +370,7 @@ function App() {
 
     try {
       await fetch(
-        googleSheetsService.DEFAULT_WEBHOOK_URL,
+        await getConfiguredBackendUrl(),
         {
           method: 'POST',
           headers: {
@@ -652,7 +655,7 @@ function App() {
 
     try {
       const response = await fetch(
-        googleSheetsService.DEFAULT_WEBHOOK_URL,
+        await getConfiguredBackendUrl(),
         {
           method: 'POST',
           headers: {
@@ -735,7 +738,7 @@ function App() {
 
     try {
       await fetch(
-        googleSheetsService.DEFAULT_WEBHOOK_URL,
+        await getConfiguredBackendUrl(),
         {
           method: 'POST',
           headers: {
