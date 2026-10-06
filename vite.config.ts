@@ -5,7 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    base: "/SJST-Seva/",
+    base: "/SJST-Seva-Test/",
 
     plugins: [react(), tailwindcss()],
 
