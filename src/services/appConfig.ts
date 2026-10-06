@@ -17,6 +17,15 @@ export interface PublicAppConfig {
     donationUrl?: string;
   };
 
+  payment?: {
+    bankName?: string;
+    accountName?: string;
+    accountNo?: string;
+    ifsc?: string;
+    branch?: string;
+    upiId?: string;
+  };
+
   google?: {
     spreadsheetId?: string;
   };

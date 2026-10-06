@@ -1,5 +1,8 @@
 import { DonationRecord, TrustConfig, VolunteerRecord } from '../types';
-import { BACKEND_URL } from './appConfig';
+import {
+  BACKEND_URL,
+  loadAppConfig
+} from './appConfig';
 
 export const TARGET_WEBHOOK_URL = BACKEND_URL;
 
@@ -12,11 +15,24 @@ export interface GoogleSheetsSyncConfig {
   webhookUrl?: string; // Google Apps Script Webhook URL
   autoSync: boolean;
 }
-export const TARGET_SPREADSHEET_ID = '1G-UXpoANZg3lBOHQBN3fTjd_elDGGZ2dVsiLVUQHjs8';
-export const TARGET_SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1G-UXpoANZg3lBOHQBN3fTjd_elDGGZ2dVsiLVUQHjs8/edit';
+
+async function getConfiguredSpreadsheetId(): Promise<string> {
+  const appConfig = await loadAppConfig();
+
+  const spreadsheetId =
+    appConfig.google?.spreadsheetId?.trim();
+
+  if (!spreadsheetId) {
+    throw new Error(
+      'Spreadsheet ID is missing from application configuration.'
+    );
+  }
+
+  return spreadsheetId;
+}
 
 export const DEFAULT_SHEETS_CONFIG: GoogleSheetsSyncConfig = {
-  spreadsheetId: localStorage.getItem('sjst_sheets_spreadsheet_id') || TARGET_SPREADSHEET_ID,
+  spreadsheetId:  localStorage.getItem('sjst_sheets_spreadsheet_id') || '',
   sheetName: 'Donations',
   webhookUrl: (localStorage.getItem('sjst_sheets_webhook_url') || '').trim(),
   autoSync: true
@@ -362,9 +378,17 @@ export async function syncDonationToGoogleSheet(
   }
 ): Promise<{ success: boolean; method?: 'api' | 'webhook' | 'local'; message?: string; error?: string }> {
   const config = { ...DEFAULT_SHEETS_CONFIG, ...customConfig };
-  const isDirectVolunteerEntry = options?.directVolunteerEntry === true;
-  const webhookUrl = (config.webhookUrl || localStorage.getItem('sjst_sheets_webhook_url') || DEFAULT_WEBHOOK_URL)?.trim();
-  const spreadsheetId = (config.spreadsheetId || localStorage.getItem('sjst_sheets_spreadsheet_id') || TARGET_SPREADSHEET_ID).trim();
+  const isDirectVolunteerEntry =
+    options?.directVolunteerEntry === true;
+
+  const webhookUrl = (
+    config.webhookUrl ||
+    localStorage.getItem('sjst_sheets_webhook_url') ||
+    DEFAULT_WEBHOOK_URL
+  )?.trim();
+
+  const spreadsheetId =
+    await getConfiguredSpreadsheetId();
   const sheetName = 'Donations'
 
   // Resolve token from parameter, sessionStorage, or localStorage
@@ -762,8 +786,9 @@ export async function syncDonationToGoogleSheet(
 export async function batchSyncAllDonations(
   donations: DonationRecord[],
   accessToken?: string | null,
-  spreadsheetId = TARGET_SPREADSHEET_ID
+  spreadsheetId?: string
 ): Promise<{ success: boolean; count: number; message: string; error?: string }> {
+  const configuredSpreadsheetId = await getConfiguredSpreadsheetId();
   if (!accessToken) {
     return {
       success: false,
@@ -872,12 +897,13 @@ export async function repairAndAlignGoogleSheetHeaders(
  */
 export async function fetchDashboardCalculation(
   accessToken: string | null | undefined,
-  spreadsheetId: string = TARGET_SPREADSHEET_ID
+  spreadsheetId?: string
 ): Promise<{
   success: boolean;
   values?: any[][];
   error?: string;
 }> {
+  const configuredSpreadsheetId = await getConfiguredSpreadsheetId();
   try {
     const webhookUrl =
       localStorage.getItem('sjst_sheets_webhook_url') ||
@@ -960,9 +986,12 @@ export async function fetchDashboardCalculation(
  */
 export async function fetchDonationsFromGoogleSheet(
   accessToken: string | null | undefined,
-  spreadsheetId: string,
+  spreadsheetId?: string,
   sheetName = 'Donations'
 ): Promise<{ success: boolean; donations?: DonationRecord[]; error?: string }> {
+  const configuredSpreadsheetId =
+  spreadsheetId?.trim() ||
+  await getConfiguredSpreadsheetId();
   try {
     const webhookUrl = localStorage.getItem('sjst_sheets_webhook_url') || DEFAULT_WEBHOOK_URL;
     let allRows: any[][] = [];
@@ -1976,7 +2005,7 @@ export function saveSheetsConfig(config: GoogleSheetsSyncConfig) {
  */
 export function getSheetsConfig(): GoogleSheetsSyncConfig {
   return {
-    spreadsheetId: localStorage.getItem('sjst_sheets_spreadsheet_id') || TARGET_SPREADSHEET_ID,
+    spreadsheetId:  localStorage.getItem('sjst_sheets_spreadsheet_id') || '',
     sheetName: localStorage.getItem('sjst_sheets_tab_name') || 'Form Responses 1',
     webhookUrl: localStorage.getItem('sjst_sheets_webhook_url') || DEFAULT_WEBHOOK_URL,
     autoSync: localStorage.getItem('sjst_sheets_auto_sync') !== 'false'

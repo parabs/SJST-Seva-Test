@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 import { DonationRecord, VolunteerRecord, TrustConfig } from './types';
-import { TRUST_CONFIG } from './data/mockData';
+import { loadAppConfig } from './services/appConfig';
 import { DonorForm } from './components/DonorForm';
 import { VolunteerPortal } from './components/VolunteerPortal';
 import { GoogleSheetView } from './components/GoogleSheetView';
@@ -108,41 +108,60 @@ class AppErrorBoundary extends React.Component<
   }
 }
 function App() {
-  const [trustConfig, setTrustConfig] = useState<TrustConfig>(() => {
-    const saved = localStorage.getItem('sjst_trust_config');
-  
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-  
-        return {
-          ...TRUST_CONFIG,
-          ...parsed,
-  
-          // Use current configured values when old localStorage
-          // contains blank or missing payment details.
-          bankName: parsed.bankName || TRUST_CONFIG.bankName,
-          accountName: parsed.accountName || TRUST_CONFIG.accountName,
-          accountNo: parsed.accountNo || TRUST_CONFIG.accountNo,
-          ifsc: parsed.ifsc || TRUST_CONFIG.ifsc,
-          branch: parsed.branch || TRUST_CONFIG.branch,
-          upiId: parsed.upiId || TRUST_CONFIG.upiId,
-  
-          regdNo: parsed.regdNo || TRUST_CONFIG.regdNo,
-          receiptsFolderId:
-            parsed.receiptsFolderId || TRUST_CONFIG.receiptsFolderId
-        };
-      } catch (error) {
-        console.error(
-          'Unable to load saved Trust Configuration:',
-          error
-        );
-      }
-    }
-  
-    return TRUST_CONFIG;
+  const [trustConfig, setTrustConfig] = useState<TrustConfig>({
+    name: '',
+    regdNo: '',
+    email: '',
+    address: '',
+    phone: '',
+    panNo: '',
+    section80G: '',
+    bankName: '',
+    accountName: '',
+    accountNo: '',
+    ifsc: '',
+    branch: '',
+    upiId: '',
+    receiptsFolderId: ''
   });
 
+  useEffect(() => {
+    let isMounted = true;
+
+    loadAppConfig()
+      .then((config) => {
+        if (!isMounted) return;
+
+        const updatedTrustConfig: TrustConfig = {
+          name: config.trust?.name || '',
+          regdNo: config.trust?.regdNo || '',
+          email: config.trust?.email || '',
+          address: config.trust?.address || '',
+          phone: config.trust?.phone || '',
+          panNo: '',
+          section80G: '',
+          bankName: config.payment?.bankName || '',
+          accountName: config.payment?.accountName || '',
+          accountNo: config.payment?.accountNo || '',
+          ifsc: config.payment?.ifsc || '',
+          branch: config.payment?.branch || '',
+          upiId: config.payment?.upiId || '',
+          receiptsFolderId: ''
+        };
+
+        setTrustConfig(updatedTrustConfig);
+      })
+      .catch((error) => {
+        console.error(
+          'Unable to load Trust Configuration:',
+          error
+        );
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const [donations, setDonations] = useState<DonationRecord[]>(() => {
     // Return empty array to prevent loading old test cache
@@ -208,11 +227,11 @@ function App() {
     const requestId = ++refreshRequestRef.current;
 
     try {
-      const donRes = await googleSheetsService.fetchDonationsFromGoogleSheet(
-        googleAccessToken,
-        googleSheetsService.TARGET_SPREADSHEET_ID,
-        'Donations'
-      );
+      export async function fetchDonationsFromGoogleSheet(
+        accessToken: string | null | undefined,
+        spreadsheetId: string,
+        sheetName = 'Donations'
+      )
 
       if (!donRes.success) {
         return {
@@ -397,10 +416,6 @@ function App() {
     }
   }, [activeView]);
   
-  React.useEffect(() => {
-    localStorage.setItem('sjst_trust_config', JSON.stringify(trustConfig));
-  }, [trustConfig]);
-
   // DEVOTEE / DONOR SUBMISSION HANDLER
   const handleDonorSubmit = async (formData: {
     donorName: string;

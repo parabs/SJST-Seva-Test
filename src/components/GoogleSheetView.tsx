@@ -15,9 +15,7 @@ import {
 } from 'lucide-react';
 import { DonationRecord, VolunteerRecord } from '../types';
 import { useGmailAuth } from '../context/GmailAuthContext';
-import { 
-  TARGET_SPREADSHEET_URL, 
-} from '../services/googleSheetsService';
+import { loadAppConfig } from '../services/appConfig';X``
 
 interface GoogleSheetViewProps {
   donations: DonationRecord[];
@@ -50,6 +48,33 @@ export function GoogleSheetView({
   const [modeFilter, setModeFilter] = useState<'All' | 'Cash' | 'UPI'>('All');
   const [volunteerFilter, setVolunteerFilter] = useState<string>('All');
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
+  const [spreadsheetUrl, setSpreadsheetUrl] = useState('');
+
+    useEffect(() => {
+    let isMounted = true;
+
+    loadAppConfig()
+      .then((config) => {
+        const spreadsheetId =
+          config.google?.spreadsheetId?.trim();
+
+        if (isMounted && spreadsheetId) {
+          setSpreadsheetUrl(
+            `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`
+          );
+        }
+      })
+      .catch((error) => {
+        console.error(
+          'Unable to load Google Spreadsheet configuration:',
+          error
+        );
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const currentRole = String(currentVolunteer?.role || '')
   .trim()
@@ -321,7 +346,7 @@ export function GoogleSheetView({
             </button>
 
             <a
-              href={TARGET_SPREADSHEET_URL}
+              href={spreadsheetUrl || '#'}
               target="_blank"
               rel="noopener noreferrer"
               className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
