@@ -227,11 +227,11 @@ function App() {
     const requestId = ++refreshRequestRef.current;
 
     try {
-      export async function fetchDonationsFromGoogleSheet(
-        accessToken: string | null | undefined,
-        spreadsheetId: string,
-        sheetName = 'Donations'
-      )
+      const donRes = await googleSheetsService.fetchDonationsFromGoogleSheet(
+        googleAccessToken,
+        undefined,
+        'Donations'
+      );
 
       if (!donRes.success) {
         return {
