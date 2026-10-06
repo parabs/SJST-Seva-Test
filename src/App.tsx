@@ -799,7 +799,7 @@ function App() {
                         {trustConfig.name}
                       </span>
                       <span className="text-[10px] font-bold uppercase bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full">
-                        Regd: {trustConfig.trustRegNo}
+                        Regd: {trustConfig.regdNo}
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
