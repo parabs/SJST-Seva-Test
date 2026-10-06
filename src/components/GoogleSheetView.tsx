@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { DonationRecord, VolunteerRecord } from '../types';
 import { useGmailAuth } from '../context/GmailAuthContext';
-import { loadAppConfig } from '../services/appConfig';X``
+import { loadAppConfig } from '../services/appConfig';
 
 interface GoogleSheetViewProps {
   donations: DonationRecord[];
