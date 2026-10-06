@@ -125,7 +125,7 @@ function App() {
     receiptsFolderId: ''
   });
 
-  useEffect(() => {
+  React.useEffect(() => {
     let isMounted = true;
 
     loadAppConfig()
