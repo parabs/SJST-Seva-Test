@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { BACKEND_URL } from '../services/appConfig';
 import { 
   X, 
   Printer, 
@@ -142,7 +143,7 @@ const uploadReceiptPdfToBackend = async (
   const base64 = pdfDataUri.split(',')[1];
 
   const response = await fetch(
-    'https://script.google.com/macros/s/AKfycbyqpWTtvnZgmX1aN_atWUvH1fAeq8uwpYC0Zl-QrulToG-jtGYwNsA6xjkicRkia99xIg/exec',
+    BACKEND_URL,
     {
       method: 'POST',
       headers: {
