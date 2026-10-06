@@ -1,6 +1,10 @@
 import { DonationRecord, TrustConfig, VolunteerRecord } from '../types';
-export const TARGET_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyqpWTtvnZgmX1aN_atWUvH1fAeq8uwpYC0Zl-QrulToG-jtGYwNsA6xjkicRkia99xIg/exec';
-export const DEFAULT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyqpWTtvnZgmX1aN_atWUvH1fAeq8uwpYC0Zl-QrulToG-jtGYwNsA6xjkicRkia99xIg/exec';
+import { BACKEND_URL } from './appConfig';
+
+export const TARGET_WEBHOOK_URL = BACKEND_URL;
+
+export const DEFAULT_WEBHOOK_URL = BACKEND_URL;
+
 
 export interface GoogleSheetsSyncConfig {
   spreadsheetId?: string;
