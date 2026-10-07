@@ -466,12 +466,12 @@ function App() {
 
     setDonations(prev => [newRecord, ...prev]);
 
-    googleSheetsService.syncDonationToGoogleSheet(
+    await googleSheetsService.syncDonationToGoogleSheet(
       newRecord,
-      googleAccessToken
-    ).catch(err => {
-      console.warn('Initial Google Sheet sync warning:', err);
-    });
+      googleAccessToken,
+      undefined,
+      { directVolunteerEntry: true }
+    );
 
     return newRecord;
   };
@@ -526,14 +526,21 @@ function App() {
 
     setDonations(prev => [newRecord, ...prev]);
 
-    googleSheetsService.syncDonationToGoogleSheet(
-      newRecord,
-      googleAccessToken,
-      undefined,
-      { directVolunteerEntry: true }
-    ).catch(err => {
-      console.error('VOLUNTEER SHEET SYNC ERROR:', err);
-    });
+    try {
+      await googleSheetsService.syncDonationToGoogleSheet(
+        newRecord,
+        googleAccessToken,
+        undefined,
+        { directVolunteerEntry: true }
+      );
+    } catch (err) {
+      console.error(
+        'VOLUNTEER SHEET SYNC ERROR:',
+        err
+      );
+
+      throw err;
+    }
 
     return newRecord;
   };
@@ -652,31 +659,18 @@ function App() {
     donationId: string,
     volunteerName: string
   ) => {
-
-    const target = donations.find(
-      d => d.donationId === donationId
-    );
-
-    if (!target) {
-      return {
-        success: false,
-        error: 'Donation not found.'
-      };
-    }
-
     // ---------------------------------------------------------
     // Get the logged-in volunteer from sessionStorage.
-    // VolunteerPortal owns the session state.
+    // VolunteerPortal owns the volunteer session state.
     // ---------------------------------------------------------
 
     let volunteerCode = '';
     let confirmedVolunteerName = volunteerName || '';
 
     try {
-      const saved =
-        sessionStorage.getItem(
-          'sjst_active_volunteer'
-        );
+      const saved = sessionStorage.getItem(
+        'sjst_active_volunteer'
+      );
 
       if (saved) {
         const parsed = JSON.parse(saved);
@@ -689,8 +683,8 @@ function App() {
 
         confirmedVolunteerName = String(
           parsed?.volunteerName ||
-          volunteerName ||
-          ''
+            volunteerName ||
+            ''
         ).trim();
       }
     } catch (err) {
@@ -712,6 +706,11 @@ function App() {
     }
 
     try {
+      // ---------------------------------------------------------
+      // IMPORTANT:
+      // Do NOT search the local donations array here.
+      // Google Sheet is the source of truth.
+      // ---------------------------------------------------------
 
       const response = await fetch(
         await getConfiguredBackendUrl(),
@@ -741,44 +740,28 @@ function App() {
         return result;
       }
 
-      const updatedRecord: DonationRecord = {
-        ...target,
+      // ---------------------------------------------------------
+      // Refresh actual Google Sheet data.
+      // This keeps UI aligned with the sheet and avoids relying
+      // on a possibly stale/duplicate local donation record.
+      // ---------------------------------------------------------
 
-        paymentStatus: 'Paid',
+      const syncResult =
+        await handleRefreshFromGoogleSheet();
 
-        confirmedBy: volunteerCode,
-
-        volunteerName:
-          confirmedVolunteerName,
-
-        confirmationCode: '',
-
-        receiptUrl:
-          result.receiptUrl || '',
-
-        emailStatus:
-          result.emailStatus ||
-          'Not Required',
-
-        updatedAt:
-          new Date().toISOString()
-      };
-
-      setDonations(prev =>
-        prev.map(d =>
-          d.donationId === donationId
-            ? updatedRecord
-            : d
-        )
-      );
+      if (syncResult?.error) {
+        return {
+          success: false,
+          error: syncResult.error
+        };
+      }
 
       return {
         ...result,
-        donation: updatedRecord
+        success: true
       };
 
     } catch (err: any) {
-
       console.error(
         'SHEET CONFIRMATION ERROR:',
         err
