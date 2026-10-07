@@ -190,37 +190,168 @@ export function buildHeaderMappedDonationsRow(headers: string[] | undefined, d: 
     d.emailMessageId || (isPaid ? `MSG-${d.donationId.split('-').pop()}` : ''), // Col L (12) - Email Message ID
     formatSheetTimestamp(d.createdAt || d.submittedAt), // Col M (13) - Created At
     formatSheetTimestamp(d.updatedAt), // Col N (14) - Updated At
-    d.confirmedBy || '' // Col O (15) - Confirmed by (Blank on Pending, filled on Paid)
+    d.confirmedBy || '', // Col O - Confirmed By / Volunteer Code
+    d.confirmationCode || '', // Col P - Confirmation Code
+    d.volunteerName || '' // Col Q - Volunteer Name
   ];
 
   if (!headers || headers.length === 0) {
     return defaultRow;
   }
 
-  return headers.map((hRaw, idx) => {
+    return headers.map((hRaw, idx) => {
     const h = (hRaw || '').toLowerCase().trim();
-    if (h.includes('donation id') || h.includes('id') || h === 'donationid') return d.donationId;
-    if (h.includes('submitted') || (h.includes('date') && !h.includes('update')) || (h.includes('time') && !h.includes('update'))) return d.submittedAt || new Date().toISOString();
-    if (h.includes('towards') || h.includes('seva') || h.includes('category') || h.includes('head') || h.includes('purpose')) return sevaName;
-    if (h.includes('donor') || h.includes('contributor') || h.includes('devotee') || (h.includes('name') && !h.includes('volunteer'))) return d.donorName || 'Devotee';
-    if (h.includes('email') || h.includes('mail')) return emailAddr;
-    if (h.includes('amount') || h.includes('rupee') || h.includes('₹') || h.includes('rs') || h.includes('inr')) return Number(d.amount) || 0;
-    if (h.includes('mode') || (h.includes('payment') && !h.includes('status') && !h.includes('ref'))) return d.paymentMode || 'UPI';
-    if (h.includes('status') && !h.includes('email') && !h.includes('whatsapp')) return isPaid ? 'Paid' : 'Pending';
-    if (h.includes('reference') || h.includes('ref') || h.includes('transaction') || h.includes('txn') || h.includes('utr')) {
-      return d.paymentReference || (d.paymentMode === 'Cash' ? (isPaid ? 'CASH-COUNTER-VERIFIED' : 'CASH-PENDING-VERIFY') : (isPaid ? `UPI-CONFIRMED-${d.confirmationCode}` : `UPI-PIN-${d.confirmationCode}`));
+
+    if (
+      h.includes('donation id') ||
+      h === 'id' ||
+      h === 'donationid'
+    ) {
+      return d.donationId;
     }
-    if (h.includes('receipt') || h.includes('drive') || h.includes('pdf') || h.includes('url') || h.includes('link')) return d.receiptUrl || '';
-    if (h.includes('whatsapp') || (h.includes('email') && h.includes('status'))) return d.emailStatus === 'Sent' ? 'Sent' : 'Pending';
-    if (h.includes('message id') || h.includes('msg')) return d.emailMessageId || '';
-    if (h.includes('created')) return formatSheetTimestamp(d.createdAt || d.submittedAt);
-    if (h.includes('updated') || h.includes('modified')) return formatSheetTimestamp(d.updatedAt);
-    if (h.includes('confirmed by') || h.includes('verified by') || h.includes('volunteer') || (h.includes('confirm') && !h.includes('code') && !h.includes('pin'))) {
+
+    if (
+      h.includes('submitted') ||
+      (h.includes('date') && !h.includes('update')) ||
+      (h.includes('time') && !h.includes('update'))
+    ) {
+      return d.submittedAt || new Date().toISOString();
+    }
+
+    if (
+      h.includes('towards') ||
+      h.includes('seva') ||
+      h.includes('category') ||
+      h.includes('head') ||
+      h.includes('purpose')
+    ) {
+      return sevaName;
+    }
+
+    if (
+      h.includes('donor') ||
+      h.includes('contributor') ||
+      h.includes('devotee') ||
+      (h.includes('name') && !h.includes('volunteer'))
+    ) {
+      return d.donorName || 'Devotee';
+    }
+
+    if (h.includes('volunteer name')) {
+      return d.volunteerName || '';
+    }
+
+    if (h.includes('email') || h.includes('mail')) {
+      return emailAddr;
+    }
+
+    if (
+      h.includes('amount') ||
+      h.includes('rupee') ||
+      h.includes('₹') ||
+      h.includes('rs') ||
+      h.includes('inr')
+    ) {
+      return Number(d.amount) || 0;
+    }
+
+    if (
+      h.includes('mode') ||
+      (h.includes('payment') &&
+        !h.includes('status') &&
+        !h.includes('ref'))
+    ) {
+      return d.paymentMode || 'UPI';
+    }
+
+    if (
+      h.includes('status') &&
+      !h.includes('email') &&
+      !h.includes('whatsapp')
+    ) {
+      return isPaid ? 'Paid' : 'Pending';
+    }
+
+    if (
+      h.includes('reference') ||
+      h.includes('ref') ||
+      h.includes('transaction') ||
+      h.includes('txn') ||
+      h.includes('utr')
+    ) {
+      return (
+        d.paymentReference ||
+        (
+          d.paymentMode === 'Cash'
+            ? (
+                isPaid
+                  ? 'CASH-COUNTER-VERIFIED'
+                  : 'CASH-PENDING-VERIFY'
+              )
+            : (
+                isPaid
+                  ? `UPI-CONFIRMED-${d.confirmationCode}`
+                  : `UPI-PIN-${d.confirmationCode}`
+              )
+        )
+      );
+    }
+
+    if (
+      h.includes('receipt') ||
+      h.includes('drive') ||
+      h.includes('pdf') ||
+      h.includes('url') ||
+      h.includes('link')
+    ) {
+      return d.receiptUrl || '';
+    }
+
+    if (
+      h.includes('whatsapp') ||
+      (h.includes('email') && h.includes('status'))
+    ) {
+      return d.emailStatus === 'Sent' ? 'Sent' : 'Pending';
+    }
+
+    if (h.includes('message id') || h.includes('msg')) {
+      return d.emailMessageId || '';
+    }
+
+    if (h.includes('created')) {
+      return formatSheetTimestamp(d.createdAt || d.submittedAt);
+    }
+
+    if (h.includes('updated') || h.includes('modified')) {
+      return formatSheetTimestamp(d.updatedAt);
+    }
+
+    if (
+      h.includes('confirmation code') ||
+      h === 'code' ||
+      h.includes('pin')
+    ) {
+      return d.confirmationCode || '';
+    }
+
+    if (h.includes('volunteer name')) {
+      return d.volunteerName || '';
+    }
+
+    if (
+      h.includes('confirmed by') ||
+      h.includes('verified by') ||
+      (h.includes('confirm') &&
+        !h.includes('code') &&
+        !h.includes('pin'))
+    ) {
       return d.confirmedBy || '';
     }
+
     if (idx < defaultRow.length) {
       return defaultRow[idx];
     }
+
     return '';
   });
 }
@@ -327,15 +458,31 @@ export async function ensureSheetStructure(
           }
 
           if (!hasDonations) {
+
             const donHeaders = [[
-              'Donation ID', 'Submitted At', 'Towards (Seva Head / Category)', 'Donor Name', 'Email',
-              'Amount', 'Payment Mode', 'Payment Status', 'Payment Reference', 'Final Receipt URL',
-              'WhatsApp Status', 'WhatsApp Message ID', 'Created At', 'Updated At', 'Confirmed by'
+              'Donation ID',
+              'Submitted At',
+              'Towards (Seva Head / Category)',
+              'Donor Name',
+              'Email',
+              'Amount',
+              'Payment Mode',
+              'Payment Status',
+              'Payment Reference',
+              'Final Receipt URL',
+              'WhatsApp Status',
+              'WhatsApp Message ID',
+              'Created At',
+              'Updated At',
+              'Confirmed by',
+              'Confirmation Code',
+              'Volunteer Name'
             ]];
-            await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(cleanId)}/values/${encodeURIComponent(formatA1Range('Donations', 'A1:O1'))}?valueInputOption=USER_ENTERED`, {
+
+            await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(cleanId)}/values/${encodeURIComponent(formatA1Range('Donations', 'A1:Q1'))}?valueInputOption=USER_ENTERED`, {
               method: 'PUT',
               headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ range: formatA1Range('Donations', 'A1:O1'), majorDimension: 'ROWS', values: donHeaders })
+              body: JSON.stringify({ range: formatA1Range('Donations', 'A1:Q1'), majorDimension: 'ROWS', values: donHeaders })
             }).catch(() => {});
           }
         }
@@ -454,12 +601,14 @@ export async function syncDonationToGoogleSheet(
         confirmationCode: donation.confirmationCode || '',
         paymentStatus: isPaid ? 'Paid' : 'Pending',
         confirmedBy: donation.confirmedBy || '',
+        volunteerName: donation.volunteerName || '',
         receiptUrl: donation.receiptUrl || '',
         submittedAt: formattedTimestamp,
         createdAt: formatSheetTimestamp(donation.createdAt || donation.submittedAt),
         updatedAt: formatSheetTimestamp(donation.updatedAt || donation.createdAt || donation.submittedAt),
         record: {
           ...donation,
+          volunteerName: donation.volunteerName || '',
           submittedAt: formattedTimestamp,
           createdAt: formatSheetTimestamp(donation.createdAt || donation.submittedAt),
           updatedAt: formatSheetTimestamp(donation.updatedAt || donation.createdAt || donation.submittedAt)
@@ -645,7 +794,7 @@ export async function syncDonationToGoogleSheet(
       // B. Donations Master Ledger (A:O)
       // ========================================================
       // Read Donations tab to check headers and if row already exists
-      const readUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(formatA1Range(donationsTab, 'A1:O'))}`;
+      const readUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(formatA1Range(donationsTab, 'A1:Q'))}`;
       
       const readRes = await fetch(readUrl, {
         headers: { Authorization: `Bearer ${effectiveToken}` }
@@ -683,7 +832,7 @@ export async function syncDonationToGoogleSheet(
 
       if (foundRowIndex > 0) {
         // UPDATE existing row in Donations tab
-        const updateRange = formatA1Range(donationsTab, `A${foundRowIndex}:O${foundRowIndex}`);
+        const updateRange = formatA1Range(donationsTab, `A${foundRowIndex}:Q${foundRowIndex}`);
         const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(updateRange)}?valueInputOption=USER_ENTERED`;
         
         const updateRes = await fetch(updateUrl, {
@@ -707,7 +856,7 @@ export async function syncDonationToGoogleSheet(
         }
       } else {
         // APPEND new master row to Donations tab
-        const donAppendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(formatA1Range(donationsTab, 'A:O'))}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+        const donAppendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(formatA1Range(donationsTab, 'A:Q'))}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
         
         let appendRes = await fetch(donAppendUrl, {
           method: 'POST',
@@ -723,7 +872,7 @@ export async function syncDonationToGoogleSheet(
 
         // If Donations tab append failed with range error and fallback tab exists, try rawTitles[0]
         if (!appendRes.ok && rawTitles.length > 0 && rawTitles[0] !== donationsTab) {
-          const fallbackDonUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(formatA1Range(rawTitles[0], 'A:O'))}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+          const fallbackDonUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(formatA1Range(rawTitles[0], 'A:Q'))}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
           const retryDonRes = await fetch(fallbackDonUrl, {
             method: 'POST',
             headers: {
@@ -834,11 +983,11 @@ export async function batchSyncAllDonations(
     });
 
     // Append to Donations
-    const donUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(formatA1Range(donationsTab, 'A:O'))}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+    const donUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(formatA1Range(donationsTab, 'A:Q'))}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
     const donRes = await fetch(donUrl, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ range: formatA1Range(donationsTab, 'A:O'), majorDimension: 'ROWS', values: donRows })
+      body: JSON.stringify({ range: formatA1Range(donationsTab, 'A:Q'), majorDimension: 'ROWS', values: donRows })
     });
 
     if (donRes.ok) {
@@ -879,7 +1028,7 @@ export async function repairAndAlignGoogleSheetHeaders(
     const donHeaders = [[
       'Donation ID', 'Submitted At', 'Towards (Seva Head / Category)', 'Donor Name', 'Email',
       'Amount', 'Payment Mode', 'Payment Status', 'Payment Reference', 'Final Receipt URL',
-      'Email Status', 'Email Message ID', 'Created At', 'Updated At', 'Confirmed by'
+      'Email Status', 'Email Message ID', 'Created At', 'Updated At', 'Confirmed by', 'Confirmation Code', 'Volunteer Name'
     ]];
 
     // Overwrite Row 1 in Form Responses
@@ -890,10 +1039,10 @@ export async function repairAndAlignGoogleSheetHeaders(
     });
 
     // Overwrite Row 1 in Donations
-    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(formatA1Range(donationsTab, 'A1:O1'))}?valueInputOption=USER_ENTERED`, {
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(formatA1Range(donationsTab, 'A1:Q1'))}?valueInputOption=USER_ENTERED`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ range: formatA1Range(donationsTab, 'A1:O1'), majorDimension: 'ROWS', values: donHeaders })
+      body: JSON.stringify({ range: formatA1Range(donationsTab, 'A1:Q1'), majorDimension: 'ROWS', values: donHeaders })
     });
 
     return {
@@ -1027,8 +1176,7 @@ export async function fetchDonationsFromGoogleSheet(
     } else {
       // Standard Google Sheets API fetch when OAuth token is available
       const range = formatA1Range(sheetName, 'A1:Q');
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}`;
-
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(configuredSpreadsheetId)}/values/${encodeURIComponent(range)}`;
       const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${accessToken}`
@@ -1070,9 +1218,9 @@ export async function fetchDonationsFromGoogleSheet(
     const msgIdIdx = findCol(['message id', 'msg']);
     const createIdx = findCol(['created at', 'created']);
     const updateIdx = findCol(['updated at', 'updated']);
-    const confirmIdx = findCol(['confirmed by', 'volunteer']);
-    const codeIdx = findCol(['confirmation code', 'code', 'pin']);
-    
+    const confirmIdx = findCol(['confirmed by', 'verified by']);
+    const codeIdx = findCol(['confirmation code']);
+    const volunteerNameIdx = findCol(['volunteer name']);
     const donations: DonationRecord[] = dataRows.map((row, index) => {
       const donationId = (idIdx >= 0 && row[idIdx]) ? String(row[idIdx]).trim() : `SJST-${Date.now()}-${index}`;
       const submittedAt = (timeIdx >= 0 && row[timeIdx]) ? String(row[timeIdx]).trim() : new Date().toISOString();
@@ -1099,8 +1247,16 @@ export async function fetchDonationsFromGoogleSheet(
       const emailMessageId = (msgIdIdx >= 0 && row[msgIdIdx]) ? String(row[msgIdIdx]).trim() : '';
       const createdAt = (createIdx >= 0 && row[createIdx]) ? String(row[createIdx]).trim() : submittedAt;
       const updatedAt = (updateIdx >= 0 && row[updateIdx]) ? String(row[updateIdx]).trim() : new Date().toISOString();
-      const confirmedBy = (confirmIdx >= 0 && row[confirmIdx]) ? String(row[confirmIdx]).trim() : '';
-      const volunteerName =  row[16] ? String(row[16]).trim() : '';
+      const confirmedBy =
+        confirmIdx >= 0 && row[confirmIdx]
+          ? String(row[confirmIdx]).trim()
+          : '';
+
+      const volunteerName =
+        volunteerNameIdx >= 0 && row[volunteerNameIdx]
+          ? String(row[volunteerNameIdx]).trim()
+          : '';
+          
       const confirmationCode = (codeIdx >= 0 && row[codeIdx]) 
         ? String(row[codeIdx]).trim() 
         : (() => {
@@ -1205,7 +1361,11 @@ export async function fetchPendingVerificationQueue(): Promise<{
 /**
  * Direct Token-less Volunteer Verification via Webhook
  * Designed for opaque 'no-cors' responses from Google Apps Script. */
-export async function verifyDonationByPin(confirmationCode: string, volunteerName: string) {
+  export async function verifyDonationByPin(
+    confirmationCode: string,
+    volunteerCode: string,
+    volunteerName: string
+  ) {
   const webhookUrl = await getBackendUrl();
 
   try {
@@ -1217,7 +1377,8 @@ export async function verifyDonationByPin(confirmationCode: string, volunteerNam
       body: JSON.stringify({
         action: 'verifyDonation',
         confirmationCode: confirmationCode.trim(),
-        confirmedBy: volunteerName
+        confirmedBy: volunteerCode.trim(),
+        volunteerName: volunteerName.trim()
       }),
       redirect: 'follow'
     });

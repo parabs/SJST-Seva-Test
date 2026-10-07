@@ -31,6 +31,7 @@ interface ReceiptModalProps {
   onClose: () => void;
   onVerifyDonation?: (
     confirmationCode: string,
+    volunteerCode: string,
     volunteerName: string
   ) => Promise<{ success: boolean; donation?: DonationRecord; error?: string }>;
 }
@@ -49,8 +50,8 @@ export function ReceiptModal({
 
   // Verification state within modal
   const [isConfirmingInModal, setIsConfirmingInModal] = useState(false);
-  const [selectedVolunteer, setSelectedVolunteer] = useState<string>(
-    volunteers[0]?.volunteerName || trustConfig.name
+  const [selectedVolunteerCode, setSelectedVolunteerCode] = useState<string>(
+    volunteers[0]?.volunteerCode || ''
   );
   const [confirmSuccessMsg, setConfirmSuccessMsg] = useState<string | null>(null);
   const [confirmErrorMsg, setConfirmErrorMsg] = useState<string | null>(null);
@@ -88,30 +89,64 @@ export function ReceiptModal({
 
   // Direct Verification from Receipt Modal
   const handleConfirmInModal = async () => {
+
     if (!onVerifyDonation) return;
+
+    const selectedVolunteerRecord = volunteers.find(
+      v => v.volunteerCode === selectedVolunteerCode
+    );
+
+    if (!selectedVolunteerRecord) {
+      setConfirmErrorMsg('Please select a valid volunteer.');
+      return;
+    }
+
     setIsConfirmingInModal(true);
+
     setConfirmErrorMsg(null);
+
     setConfirmSuccessMsg(null);
 
     try {
-      const code = currentDonation.confirmationCode || currentDonation.donationId;
-      const res = await onVerifyDonation(code, selectedVolunteer);
-    
-    if (res.success && res.donation) {
-      setDirectSuccessDonation(res.donation);
-    
-      // Automatically open the receipt after successful verification.
-      // This mounts ReceiptModal, which triggers the automatic
-      // PDF → Drive → Email workflow.
-      setModalReceiptDonation(res.donation);
-    } else {
-        setConfirmErrorMsg(res.error || 'Failed to verify donation.');
+
+      const code =
+        currentDonation.confirmationCode ||
+        currentDonation.donationId;
+
+      const res = await onVerifyDonation(
+        code,
+        selectedVolunteerRecord.volunteerCode,
+        selectedVolunteerRecord.volunteerName
+      );
+
+      if (res.success && res.donation) {
+
+        setDirectSuccessDonation(res.donation);
+
+        setCurrentDonation(res.donation);
+
+        setModalReceiptDonation(res.donation);
+
+      } else {
+
+        setConfirmErrorMsg(
+          res.error || 'Failed to verify donation.'
+        );
+
       }
+
     } catch (e: any) {
-      setConfirmErrorMsg(e.message || 'Error executing verification.');
+
+      setConfirmErrorMsg(
+        e.message || 'Error executing verification.'
+      );
+
     } finally {
+
       setIsConfirmingInModal(false);
+
     }
+
   };
 
   const handleDispatchEmail = async () => {
@@ -726,21 +761,25 @@ const uploadReceiptPdfToBackend = async (
 
             <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
               <select
-                value={selectedVolunteer}
-                onChange={e => setSelectedVolunteer(e.target.value)}
+                value={selectedVolunteerCode}
+                onChange={e => setSelectedVolunteerCode(e.target.value)}
                 className="bg-white border border-amber-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-hidden"
               >
                 {volunteers.length > 0 ? (
                   volunteers.map(v => (
-                    <option key={v.volunteerCode} value={v.volunteerName}>
+                    <option
+                      key={v.volunteerCode}
+                      value={v.volunteerCode}
+                    >
                       {v.volunteerName} ({v.volunteerCode})
                     </option>
                   ))
                 ) : (
-                  <option value={trustConfig.name}>{trustConfig.name}</option>
+                  <option value="">
+                    {trustConfig.name}
+                  </option>
                 )}
               </select>
-
               <button
                 onClick={handleConfirmInModal}
                 disabled={isConfirmingInModal}
@@ -936,7 +975,7 @@ const uploadReceiptPdfToBackend = async (
                     ) : (
                       <span className="text-emerald-800 font-bold flex items-center gap-0.5 font-mono text-[9.5px]">
                         <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                        <span>✓ Paid ({currentDonation.confirmedBy || 'Verified'})</span>
+                        <span>✓ Paid ({currentDonation.volunteerName || 'Verified'})</span>
                       </span>
                     )}
                   </div>

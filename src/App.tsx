@@ -358,15 +358,17 @@ function App() {
   const handleConfirmRepaymentFromSheet = async (
     donation: DonationRecord
   ): Promise<void> => {
-    const confirmedBy = (() => {
+    const activeVolunteer = (() => {
       try {
         const saved = sessionStorage.getItem('sjst_active_volunteer');
-        const parsed = saved ? JSON.parse(saved) : null;
-        return parsed?.volunteerCode || '';
+        return saved ? JSON.parse(saved) : null;
       } catch {
-        return '';
+        return null;
       }
     })();
+
+    const confirmedBy = activeVolunteer?.volunteerCode || '';
+    const volunteerName = activeVolunteer?.volunteerName || '';
 
     try {
       await fetch(
@@ -380,7 +382,8 @@ function App() {
             action: 'confirm_repayment',
             donationId: donation.donationId.trim(),
             volunteerCode: confirmedBy,
-            confirmedBy: confirmedBy
+            confirmedBy: confirmedBy,
+            volunteerName
           }),
           redirect: 'follow'
         }
@@ -487,7 +490,8 @@ function App() {
     const seq = String(donations.length + 1).padStart(4, '0');
     const donationId = `SJST-${dateStr}-${seq}`;
     const confirmationCode = '';
-    const confirmedBy = formData.volunteerName;
+    const confirmedBy = formData.volunteerCode;
+    const volunteerName = formData.volunteerName;
     const paymentStatus = 'Paid';
     const paymentReference = formData.paymentMode === 'Cash' ? 'CASH-COUNTER-DIRECT' : 'UPI-COUNTER-DIRECT';
     let driveReceiptUrl = `https://drive.google.com/file/d/receipt-${donationId}/view`;
@@ -512,6 +516,7 @@ function App() {
       updatedAt: new Date().toISOString(),
       confirmationCode,
       confirmedBy,
+      volunteerName,
       sevaCategory: formData.sevaCategory,
       sevaHead: formData.sevaHead
     };
@@ -535,6 +540,7 @@ function App() {
   
     const handleVolunteerVerify = async (
     confirmationCode: string,
+    volunteerCode: string,
     volunteerName: string
     ): Promise<{
       success: boolean;
@@ -546,6 +552,7 @@ function App() {
       try {
         const result = await googleSheetsService.verifyDonationByPin(
           cleanCode,
+          volunteerCode,
           volunteerName
         );
 
@@ -561,7 +568,8 @@ function App() {
         const updatedRecord: DonationRecord = {
           ...result.donation,
           paymentStatus: 'Paid',
-          confirmedBy: volunteerName,
+          confirmedBy: volunteerCode,
+          volunteerName,
           confirmationCode: '',
           receiptUrl: result.receiptUrl || result.donation?.receiptUrl || '',
           updatedAt: new Date().toISOString()
@@ -644,6 +652,9 @@ function App() {
     donationId: string,
     volunteerName: string
   ) => {
+    const volunteerCode = currentVolunteer?.volunteerCode || '';
+    const confirmedVolunteerName =
+    currentVolunteer?.volunteerName || volunteerName || '';
     const target = donations.find(d => d.donationId === donationId);
 
     if (!target) {
@@ -664,8 +675,9 @@ function App() {
           body: JSON.stringify({
             action: 'confirm_sheet_donation',
             donationId: donationId.trim(),
-            volunteerCode: currentVolunteer?.volunteerCode || '',
-            confirmedBy: currentVolunteer?.volunteerCode || ''
+            volunteerCode,
+            confirmedBy: volunteerCode,
+            volunteerName: confirmedVolunteerName
           }),
           redirect: 'follow'
         }
@@ -680,7 +692,8 @@ function App() {
       const updatedRecord: DonationRecord = {
         ...target,
         paymentStatus: 'Paid',
-        confirmedBy: currentVolunteer?.volunteerCode || '',
+        confirmedBy: volunteerCode,
+        volunteerName: confirmedVolunteerName,
         confirmationCode: '',
         receiptUrl: result.receiptUrl || '',
         emailStatus: result.emailStatus || 'Not Required',
@@ -882,11 +895,17 @@ function App() {
               volunteers={volunteers}
               onSubmitDonation={handleDonorSubmit}
               onViewReceipt={d => setModalReceiptDonation(d)}
-              onVerifyDonation={async (code, volName) => {
-                const res = await handleVolunteerVerify(code, volName);
+              onVerifyDonation={async (code, volunteerCode, volunteerName) => {
+                const res = await handleVolunteerVerify(
+                  code,
+                  volunteerCode,
+                  volunteerName
+                );
+
                 if (res.success && res.donation) {
                   setModalReceiptDonation(res.donation);
                 }
+
                 return res;
               }}
             />
@@ -975,11 +994,22 @@ function App() {
           donation={modalReceiptDonation}
           trustConfig={trustConfig}
           volunteers={volunteers}
-          onVerifyDonation={async (code, volName) => {
-            const res = await handleVolunteerVerify(code, volName);
+          onVerifyDonation={async (
+            code,
+            volunteerCode,
+            volunteerName
+          ) => {
+
+            const res = await handleVolunteerVerify(
+              code,
+              volunteerCode,
+              volunteerName
+            );
+
             if (res.success && res.donation) {
               setModalReceiptDonation(res.donation);
             }
+
             return res;
           }}
           onClose={() => setModalReceiptDonation(null)}

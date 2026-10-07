@@ -44,6 +44,7 @@ interface VolunteerPortalProps {
   trustConfig: TrustConfig;
   onVerifyDonation: (
     confirmationCode: string,
+    volunteerCode: string,
     volunteerName: string
   ) => Promise<{ success: boolean; donation?: DonationRecord; error?: string }>;
   onDirectDonationSubmit?: (formData: {
@@ -459,8 +460,9 @@ React.useEffect(() => {
     // SINGLE verification path:
     // VolunteerPortal -> App.tsx -> Google Apps Script
     const result = await onVerifyDonation(
-      clean,
-      `${currentVolunteer.volunteerName} (${currentVolunteer.volunteerCode})`
+        clean,
+        currentVolunteer.volunteerCode,
+        currentVolunteer.volunteerName
     );
     
     setVerifyResult(result);
