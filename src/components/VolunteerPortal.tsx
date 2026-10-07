@@ -58,7 +58,15 @@ interface VolunteerPortalProps {
     volunteerCode: string;
   }) => Promise<DonationRecord>;
   onViewReceipt: (donation: DonationRecord) => void;
-  onConfirmDonationFromSheet?: (donationId: string, volunteerName: string) => void;
+  onConfironConfirmDonationFromSheet?: (
+  donationId: string,
+  volunteerCode: string,
+  volunteerName: string
+) => Promise<{
+  success: boolean;
+  donation?: DonationRecord;
+  error?: string;
+}>;
   onSendReceipt?: (donation: DonationRecord) => Promise<void>;
   onRepayment?: (donation: DonationRecord) => Promise<void>;
   onConfirmRepayment?: (donation: DonationRecord) => Promise<void>;

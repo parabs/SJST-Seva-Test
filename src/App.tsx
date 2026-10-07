@@ -657,113 +657,139 @@ function App() {
 
   const handleConfirmDonationFromSheet = async (
     donationId: string,
+    volunteerCode: string,
     volunteerName: string
   ) => {
-    // ---------------------------------------------------------
-    // Get the logged-in volunteer from sessionStorage.
-    // VolunteerPortal owns the volunteer session state.
-    // ---------------------------------------------------------
+    const target = donations.find(
+      d => d.donationId === donationId
+    );
 
-    let volunteerCode = '';
-    let confirmedVolunteerName = volunteerName || '';
-
-    try {
-      const saved = sessionStorage.getItem(
-        'sjst_active_volunteer'
-      );
-
-      if (saved) {
-        const parsed = JSON.parse(saved);
-
-        volunteerCode = String(
-          parsed?.volunteerCode || ''
-        )
-          .trim()
-          .toUpperCase();
-
-        confirmedVolunteerName = String(
-          parsed?.volunteerName ||
-            volunteerName ||
-            ''
-        ).trim();
-      }
-    } catch (err) {
-      console.warn(
-        'Unable to read active volunteer session:',
-        err
-      );
-    }
-
-    if (!volunteerCode) {
+    if (!target) {
       return {
         success: false,
-        error: 'Active volunteer session not found.'
+        error: 'Donation not found.'
       };
     }
 
-    if (!confirmedVolunteerName) {
-      confirmedVolunteerName = 'Trust Volunteer';
+    const cleanVolunteerCode =
+      String(volunteerCode || '').trim().toUpperCase();
+
+    const cleanVolunteerName =
+      String(volunteerName || '').trim();
+
+    if (!cleanVolunteerCode) {
+      return {
+        success: false,
+        error: 'Active volunteer code is missing.'
+      };
+    }
+
+    if (!cleanVolunteerName) {
+      return {
+        success: false,
+        error: 'Volunteer name is missing.'
+      };
     }
 
     try {
-      // ---------------------------------------------------------
-      // IMPORTANT:
-      // Do NOT search the local donations array here.
-      // Google Sheet is the source of truth.
-      // ---------------------------------------------------------
+      console.log(
+        'LIVE SHEET CONFIRM REQUEST:',
+        {
+          donationId,
+          volunteerCode: cleanVolunteerCode,
+          volunteerName: cleanVolunteerName
+        }
+      );
 
       const response = await fetch(
         await getConfiguredBackendUrl(),
         {
           method: 'POST',
-
           headers: {
             'Content-Type':
               'text/plain;charset=utf-8'
           },
-
           body: JSON.stringify({
             action: 'confirm_sheet_donation',
             donationId: donationId.trim(),
-            volunteerCode,
-            confirmedBy: volunteerCode,
-            volunteerName: confirmedVolunteerName
+            volunteerCode: cleanVolunteerCode,
+            confirmedBy: cleanVolunteerCode,
+            volunteerName: cleanVolunteerName
           }),
-
           redirect: 'follow'
         }
       );
 
       const result = await response.json();
 
+      console.log(
+        'LIVE SHEET CONFIRM RESPONSE:',
+        result
+      );
+
       if (!result.success) {
-        return result;
-      }
-
-      // ---------------------------------------------------------
-      // Refresh actual Google Sheet data.
-      // This keeps UI aligned with the sheet and avoids relying
-      // on a possibly stale/duplicate local donation record.
-      // ---------------------------------------------------------
-
-      const syncResult =
-        await handleRefreshFromGoogleSheet();
-
-      if (syncResult?.error) {
         return {
           success: false,
-          error: syncResult.error
+          error:
+            result.error ||
+            'Payment confirmation failed.'
         };
       }
 
+      /*
+      * Backend has already executed:
+      *
+      * H = Paid
+      * N = Updated timestamp
+      * O = Volunteer Code
+      * P = blank
+      * Q = Volunteer Name
+      */
+
+      const updatedRecord: DonationRecord = {
+        ...target,
+
+        paymentStatus: 'Paid',
+
+        confirmedBy:
+          result.confirmedBy ||
+          cleanVolunteerCode,
+
+        volunteerName:
+          result.volunteerName ||
+          cleanVolunteerName,
+
+        confirmationCode: '',
+
+        receiptUrl:
+          result.receiptUrl || '',
+
+        emailStatus:
+          result.emailStatus ||
+          'Pending',
+
+        updatedAt:
+          result.updatedAt ||
+          new Date().toISOString()
+      };
+
+      setDonations(prev =>
+        prev.map(d =>
+          d.donationId === donationId
+            ? updatedRecord
+            : d
+        )
+      );
+
       return {
-        ...result,
-        success: true
+        success: true,
+        donation: updatedRecord
       };
 
     } catch (err: any) {
+
       console.error(
-        'SHEET CONFIRMATION ERROR:',
+        'LIVE SHEET CONFIRMATION ERROR:',
         err
       );
 

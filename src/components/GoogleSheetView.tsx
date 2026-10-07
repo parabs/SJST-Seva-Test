@@ -244,7 +244,9 @@ export function GoogleSheetView({
 
     try {
       if (!onConfirmDonation) {
-        throw new Error('Payment confirmation handler is unavailable.');
+        throw new Error(
+          'Payment confirmation handler is unavailable.'
+        );
       }
 
       const result = await onConfirmDonation(
@@ -254,23 +256,15 @@ export function GoogleSheetView({
 
       if (!result?.success) {
         throw new Error(
-          result?.error || 'Failed to confirm donation.'
+          result?.error ||
+          'Failed to confirm donation.'
         );
       }
 
-      // ---------------------------------------------------------
-      // PAYMENT CONFIRMED
-      // ---------------------------------------------------------
       setConfirmSuccessMsg(
         `Payment confirmed for ${confirmingDonation.donorName}!`
       );
 
-      // ---------------------------------------------------------
-      // STAGE 2 — OPEN RECEIPT MODAL
-      //
-      // ReceiptModal will then execute:
-      // Generate PDF → Stage 3 Save → Stage 4 Email
-      // ---------------------------------------------------------
       if (result.donation) {
         onViewReceipt(result.donation);
       }
@@ -284,7 +278,7 @@ export function GoogleSheetView({
     } catch (error: any) {
 
       console.error(
-        'LIVE SHEET CONFIRMATION ERROR:',
+        'LIVE SHEET CONFIRM ERROR:',
         error
       );
 
