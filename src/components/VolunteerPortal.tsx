@@ -410,6 +410,21 @@ React.useEffect(() => {
         });
 
         setDirectSuccessDonation(record);
+
+        // ---------------------------------------------------------
+        // STANDARD RECEIPT WORKFLOW
+        // Direct donations are already Paid and therefore do not
+        // require confirmation-code verification.
+        //
+        // Automatically open the same ReceiptModal used by the
+        // donor + confirmation-code workflow.
+        // ReceiptModal will:
+        // 1. Render receipt
+        // 2. Generate PDF
+        // 3. Save PDF to Drive
+        // 4. Email the same PDF
+        // ---------------------------------------------------------
+        onViewReceipt(record);
         // Reset form for next devotee
         setDirectDonorName('');
         setDirectEmail('');
