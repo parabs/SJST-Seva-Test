@@ -652,9 +652,7 @@ function App() {
     donationId: string,
     volunteerName: string
   ) => {
-    const volunteerCode = currentVolunteer?.volunteerCode || '';
-    const confirmedVolunteerName =
-    currentVolunteer?.volunteerName || volunteerName || '';
+
     const target = donations.find(d => d.donationId === donationId);
 
     if (!target) {
@@ -664,14 +662,49 @@ function App() {
       };
     }
 
+    // Get the logged-in volunteer from session
+    let volunteerCode = '';
+    let confirmedVolunteerName = volunteerName || '';
+
     try {
+      const saved = sessionStorage.getItem('sjst_active_volunteer');
+
+      if (saved) {
+        const parsed = JSON.parse(saved);
+
+        volunteerCode = String(
+          parsed?.volunteerCode || ''
+        ).trim().toUpperCase();
+
+        confirmedVolunteerName = String(
+          parsed?.volunteerName || volunteerName || ''
+        ).trim();
+      }
+    } catch (err) {
+      console.warn(
+        'Unable to read active volunteer session:',
+        err
+      );
+    }
+
+    if (!volunteerCode) {
+      return {
+        success: false,
+        error: 'Active volunteer session not found.'
+      };
+    }
+
+    try {
+
       const response = await fetch(
         await getConfiguredBackendUrl(),
         {
           method: 'POST',
+
           headers: {
             'Content-Type': 'text/plain;charset=utf-8'
           },
+
           body: JSON.stringify({
             action: 'confirm_sheet_donation',
             donationId: donationId.trim(),
@@ -679,6 +712,7 @@ function App() {
             confirmedBy: volunteerCode,
             volunteerName: confirmedVolunteerName
           }),
+
           redirect: 'follow'
         }
       );
@@ -714,6 +748,7 @@ function App() {
       };
 
     } catch (err: any) {
+
       console.error(
         'SHEET CONFIRMATION ERROR:',
         err
@@ -721,7 +756,9 @@ function App() {
 
       return {
         success: false,
-        error: err.message || 'Network error during donation confirmation.'
+        error:
+          err?.message ||
+          'Network error during donation confirmation.'
       };
     }
   };

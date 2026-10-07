@@ -23,7 +23,14 @@ interface GoogleSheetViewProps {
   currentVolunteer: VolunteerRecord | null;
   onViewReceipt: (donation: DonationRecord) => void;
   onSendReceipt?: (donation: DonationRecord) => Promise<void>;
-  onConfirmDonation?: (donationId: string, volunteerName: string) => void;
+  onConfirmDonation?: (
+    donationId: string,
+    volunteerName: string
+  ) => Promise<{
+    success: boolean;
+    donation?: DonationRecord;
+    error?: string;
+  }>;
   onCancelDonation?: (donationId: string, volunteerName: string) => Promise<void>;
   onRepayment?: (donation: DonationRecord) => Promise<void>;
   onConfirmRepayment?: (donation: DonationRecord) => Promise<void>;
@@ -232,17 +239,27 @@ export function GoogleSheetView({
     if (!confirmingDonation) return;
     setIsProcessingConfirm(true);
 
-    if (onConfirmDonation) {
-      onConfirmDonation(confirmingDonation.donationId, selectedVolunteerForConfirm);
-    }
+    const handleExecuteConfirm = () => {
+      if (!confirmingDonation) return;
+      setIsProcessingConfirm(true);
 
-    setConfirmSuccessMsg(`Payment confirmed for ${confirmingDonation.donorName}! Official receipt generated.`);
-    
-    setTimeout(() => {
-      setIsProcessingConfirm(false);
-      setConfirmSuccessMsg('');
-      setConfirmingDonation(null);
-    }, 1200);
+      if (onConfirmDonation) {
+        onConfirmDonation(
+          confirmingDonation.donationId,
+          selectedVolunteerForConfirm
+        );
+      }
+
+      setConfirmSuccessMsg(
+        `Payment confirmed for ${confirmingDonation.donorName}! Official receipt generated.`
+      );
+
+      setTimeout(() => {
+        setIsProcessingConfirm(false);
+        setConfirmSuccessMsg('');
+        setConfirmingDonation(null);
+      }, 1200);
+    };
   };
 
   const exportCsv = () => {
