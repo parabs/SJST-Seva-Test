@@ -1570,7 +1570,7 @@ React.useEffect(() => {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Amount:</span>
-                        <span className="font-black text-amber-900">₹{verifyResult.donation.amount.toLocaleString('en-IN')}</span>
+                        <span className="font-black text-amber-900">₹{Number(verifyResult.donation.amount || 0).toLocaleString('en-IN')}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Receipt Email:</span>

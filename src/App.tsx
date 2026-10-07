@@ -653,7 +653,9 @@ function App() {
     volunteerName: string
   ) => {
 
-    const target = donations.find(d => d.donationId === donationId);
+    const target = donations.find(
+      d => d.donationId === donationId
+    );
 
     if (!target) {
       return {
@@ -662,22 +664,33 @@ function App() {
       };
     }
 
-    // Get the logged-in volunteer from session
+    // ---------------------------------------------------------
+    // Get the logged-in volunteer from sessionStorage.
+    // VolunteerPortal owns the session state.
+    // ---------------------------------------------------------
+
     let volunteerCode = '';
     let confirmedVolunteerName = volunteerName || '';
 
     try {
-      const saved = sessionStorage.getItem('sjst_active_volunteer');
+      const saved =
+        sessionStorage.getItem(
+          'sjst_active_volunteer'
+        );
 
       if (saved) {
         const parsed = JSON.parse(saved);
 
         volunteerCode = String(
           parsed?.volunteerCode || ''
-        ).trim().toUpperCase();
+        )
+          .trim()
+          .toUpperCase();
 
         confirmedVolunteerName = String(
-          parsed?.volunteerName || volunteerName || ''
+          parsed?.volunteerName ||
+          volunteerName ||
+          ''
         ).trim();
       }
     } catch (err) {
@@ -694,6 +707,10 @@ function App() {
       };
     }
 
+    if (!confirmedVolunteerName) {
+      confirmedVolunteerName = 'Trust Volunteer';
+    }
+
     try {
 
       const response = await fetch(
@@ -702,7 +719,8 @@ function App() {
           method: 'POST',
 
           headers: {
-            'Content-Type': 'text/plain;charset=utf-8'
+            'Content-Type':
+              'text/plain;charset=utf-8'
           },
 
           body: JSON.stringify({
@@ -725,13 +743,25 @@ function App() {
 
       const updatedRecord: DonationRecord = {
         ...target,
+
         paymentStatus: 'Paid',
+
         confirmedBy: volunteerCode,
-        volunteerName: confirmedVolunteerName,
+
+        volunteerName:
+          confirmedVolunteerName,
+
         confirmationCode: '',
-        receiptUrl: result.receiptUrl || '',
-        emailStatus: result.emailStatus || 'Not Required',
-        updatedAt: new Date().toISOString()
+
+        receiptUrl:
+          result.receiptUrl || '',
+
+        emailStatus:
+          result.emailStatus ||
+          'Not Required',
+
+        updatedAt:
+          new Date().toISOString()
       };
 
       setDonations(prev =>

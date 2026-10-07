@@ -235,23 +235,37 @@ export function GoogleSheetView({
     );
   });
 
-  const handleExecuteConfirm = () => {
-    if (!confirmingDonation) return;
+  const handleExecuteConfirm = async () => {
+
+    if (!confirmingDonation) {
+      return;
+    }
+
     setIsProcessingConfirm(true);
+    setConfirmSuccessMsg('');
 
-    const handleExecuteConfirm = () => {
-      if (!confirmingDonation) return;
-      setIsProcessingConfirm(true);
+    try {
 
-      if (onConfirmDonation) {
-        onConfirmDonation(
-          confirmingDonation.donationId,
-          selectedVolunteerForConfirm
+      if (!onConfirmDonation) {
+        throw new Error(
+          'Donation confirmation handler is not available.'
+        );
+      }
+
+      const result = await onConfirmDonation(
+        confirmingDonation.donationId,
+        selectedVolunteerForConfirm
+      );
+
+      if (!result?.success) {
+        throw new Error(
+          result?.error ||
+          'Donation confirmation failed.'
         );
       }
 
       setConfirmSuccessMsg(
-        `Payment confirmed for ${confirmingDonation.donorName}! Official receipt generated.`
+        `Payment confirmed for ${confirmingDonation.donorName}!`
       );
 
       setTimeout(() => {
@@ -259,7 +273,21 @@ export function GoogleSheetView({
         setConfirmSuccessMsg('');
         setConfirmingDonation(null);
       }, 1200);
-    };
+
+    } catch (err: any) {
+
+      console.error(
+        'LIVE SHEET CONFIRM ERROR:',
+        err
+      );
+
+      setIsProcessingConfirm(false);
+
+      setConfirmSuccessMsg(
+        err?.message ||
+        'Donation confirmation failed.'
+      );
+    }
   };
 
   const exportCsv = () => {
