@@ -171,8 +171,10 @@ export function ReceiptModal({
 
 const uploadReceiptPdfToBackend = async (
   pdf: jsPDF,
-  fileName: string
+  fileName: string,
+  donationId: string
 ) => {
+
   const pdfDataUri = pdf.output('datauristring');
 
   const base64 = pdfDataUri.split(',')[1];
@@ -181,12 +183,14 @@ const uploadReceiptPdfToBackend = async (
     getConfiguredBackendUrl(),
     {
       method: 'POST',
+
       headers: {
         'Content-Type': 'text/plain;charset=utf-8'
       },
+
       body: JSON.stringify({
         action: 'save_client_receipt_pdf',
-        donationId: currentDonation.donationId,
+        donationId,
         fileName,
         pdfBase64: base64
       })
@@ -197,7 +201,8 @@ const uploadReceiptPdfToBackend = async (
 
   if (!result.success) {
     throw new Error(
-      result.error || 'Unable to save receipt PDF to Google Drive.'
+      result.error ||
+      'Unable to save receipt PDF to Google Drive.'
     );
   }
 
@@ -352,109 +357,77 @@ const uploadReceiptPdfToBackend = async (
       setIsGeneratingPdf(false);
     }
   };
-  const handleAutoSaveReceiptPdf = async (): Promise<boolean> => {
-    if (!currentDonation) {
-      return false;
-    }
   
+  const handleAutoSaveReceiptPdf = async (
+    donationSnapshot: DonationRecord,
+    receiptElement: HTMLElement
+  ): Promise<boolean> => {
+
     try {
-  
+
       console.log(
-        'AUTO RECEIPT: Starting for donation:',
-        currentDonation.donationId
+        'AUTO RECEIPT: Starting background processing for:',
+        donationSnapshot.donationId
       );
-  
+
       // ---------------------------------------------------------
-      // Wait for the actual receipt DOM element to exist.
+      // IMPORTANT:
+      // This receiptElement is a CLONED snapshot of the receipt.
+      // It is no longer dependent on the visible ReceiptModal.
       // ---------------------------------------------------------
-  
-      let receiptElement: HTMLElement | null = null;
-  
-      for (let attempt = 0; attempt < 20; attempt++) {
-  
-        receiptElement = document.getElementById(
-          'compact-digital-receipt'
-        );
-  
-        if (receiptElement) {
-          break;
-        }
-  
-        console.log(
-          `AUTO RECEIPT: Waiting for receipt element... attempt ${attempt + 1}`
-        );
-  
-        await new Promise(resolve =>
-          setTimeout(resolve, 300)
-        );
-      }
-  
-      if (!receiptElement) {
-        throw new Error(
-          'Receipt element was not rendered after waiting.'
-        );
-      }
-  
-      console.log(
-        'AUTO RECEIPT: Receipt element found.'
-      );
-  
-      // ---------------------------------------------------------
-      // Wait for logo, watermark, fonts and other assets.
-      // ---------------------------------------------------------
-  
+
       await waitForReceiptAssets(receiptElement);
-  
-      // Give browser a little additional time to paint everything.
+
       await new Promise(resolve =>
         setTimeout(resolve, 500)
       );
-  
+
       console.log(
         'AUTO RECEIPT: Receipt assets ready. Creating PNG...'
       );
-  
+
       // ---------------------------------------------------------
-      // Generate image from the SAME online receipt.
+      // Generate PNG from the SNAPSHOT
       // ---------------------------------------------------------
-  
+
       const dataUrl = await toPng(receiptElement, {
         pixelRatio: 3,
         cacheBust: true,
         backgroundColor: '#FFF3E0',
         skipFonts: false
       });
-  
+
       console.log(
-        'AUTO RECEIPT: PNG generated.'
+        'AUTO RECEIPT: PNG generated:',
+        donationSnapshot.donationId
       );
-  
+
       // ---------------------------------------------------------
-      // Convert PNG to PDF.
+      // Convert PNG to PDF
       // ---------------------------------------------------------
-  
+
       const img = new Image();
-  
+
       await new Promise<void>((resolve, reject) => {
-  
+
         img.onload = () => resolve();
-  
+
         img.onerror = () =>
           reject(
             new Error(
               'Receipt image could not be loaded.'
             )
           );
-  
+
         img.src = dataUrl;
       });
-  
+
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
         format: [210, 105]
       });
-  
+
       pdf.addImage(
         dataUrl,
         'PNG',
@@ -465,210 +438,251 @@ const uploadReceiptPdfToBackend = async (
         undefined,
         'FAST'
       );
-  
+
       console.log(
-        'AUTO RECEIPT: PDF generated.'
+        'AUTO RECEIPT: PDF generated:',
+        donationSnapshot.donationId
       );
-  
+
       // ---------------------------------------------------------
-      // Send EXACT PDF to Apps Script.
-      // Apps Script saves it to Drive and emails it.
+      // Upload EXACT PDF to Google Apps Script
       // ---------------------------------------------------------
-  
+
       const fileName =
-        `SJST_Official_Receipt_${currentDonation.donationId}.pdf`;
-  
+        `SJST_Official_Receipt_${donationSnapshot.donationId}.pdf`;
+
       console.log(
-        'AUTO RECEIPT: Uploading PDF to backend...'
+        'AUTO RECEIPT: Uploading PDF:',
+        donationSnapshot.donationId
       );
-  
+
       const backendResult =
         await uploadReceiptPdfToBackend(
           pdf,
-          fileName
+          fileName,
+          donationSnapshot.donationId
         );
-  
+
       console.log(
         'AUTO RECEIPT: Backend response:',
+        donationSnapshot.donationId,
         backendResult
       );
-  
+
       if (!backendResult?.success) {
+
         throw new Error(
           backendResult?.error ||
           'Backend failed to save the receipt PDF.'
         );
+
       }
-  
+
       // ---------------------------------------------------------
-      // Make sure email was actually sent.
+      // Confirm email was sent
       // ---------------------------------------------------------
-  
+
       if (
         backendResult.emailStatus &&
         backendResult.emailStatus !== 'Sent'
       ) {
+
         throw new Error(
           backendResult.emailError ||
           'Receipt was saved to Drive but email was not sent.'
         );
+
       }
-  
-      // ---------------------------------------------------------
-      // Update local receipt state.
-      // ---------------------------------------------------------
-  
-      setCurrentDonation(prev => {
-  
-        if (!prev) {
-          return prev;
-        }
-  
-        return {
-          ...prev,
-  
-          receiptUrl:
-            backendResult.receiptUrl ||
-            prev.receiptUrl,
-  
-          emailStatus:
-            backendResult.emailStatus ||
-            prev.emailStatus
-        };
-      });
-  
+
       console.log(
-        'AUTO RECEIPT: COMPLETE.',
+        'AUTO RECEIPT: COMPLETE:',
+        donationSnapshot.donationId,
         backendResult.receiptUrl
       );
-  
+
       return true;
-  
+
     } catch (error) {
-  
+
       console.error(
         'AUTO RECEIPT: FAILED:',
+        donationSnapshot.donationId,
         error
       );
-  
-      // IMPORTANT:
-      // Re-throw so the useEffect knows the process failed.
+
       throw error;
+
     }
   };
 
  useEffect(() => {
-    if (!currentDonation) return;
-  
-    // Only automatic processing for Paid donations.
-    if (currentDonation.paymentStatus !== 'Paid') return;
-  
-    // Existing receipt = do not generate another PDF.
-    if (currentDonation.receiptUrl) {
-      console.log(
-        'AUTO RECEIPT: Existing receipt found. No new PDF required.'
-      );
-      return;
-    }
-  
-    // Already successfully processed.
-    if (
-      autoReceiptProcessedRef.current ===
+
+  if (!currentDonation) {
+    return;
+  }
+
+  // Only automatic processing for Paid donations.
+  if (currentDonation.paymentStatus !== 'Paid') {
+    return;
+  }
+
+  // Existing receipt = nothing to generate.
+  if (currentDonation.receiptUrl) {
+
+    console.log(
+      'AUTO RECEIPT: Existing receipt found:',
       currentDonation.donationId
-    ) {
-      return;
-    }
-  
-    let cancelled = false;
-    let attempts = 0;
-  
-    const tryAutomaticReceipt = async () => {
-      // Maximum ~10 seconds waiting for receipt to render.
-      if (cancelled || attempts >= 20) {
-        console.error(
-          'AUTO RECEIPT: Receipt did not become ready.'
-        );
-        return;
-      }
-  
-      attempts++;
-  
-      const receiptElement = document.getElementById(
-        'compact-digital-receipt'
-      );
-  
-      // Receipt has not mounted yet.
-      // Keep trying — DO NOT give up.
-      if (!receiptElement) {
-        setTimeout(tryAutomaticReceipt, 500);
-        return;
-      }
-  
-      // Prevent duplicate processing.
-      if (
-        autoReceiptProcessedRef.current ===
-        currentDonation.donationId
-      ) {
-        return;
-      }
-  
-      try {
-        console.log(
-          'AUTO RECEIPT: Receipt is ready. Starting automatic PDF workflow.'
-        );
-  
-        const success =
-          await handleAutoSaveReceiptPdf();
-  
-        if (cancelled) return;
-  
-        if (success) {
-          // Mark ONLY after PDF + Drive + Email succeeded.
-          autoReceiptProcessedRef.current =
-            currentDonation.donationId;
-  
-          setConfirmSuccessMsg(
-            '🎉 Offering confirmed & verified! Official Receipt generated, saved to Drive and emailed successfully.'
-          );
-  
-          console.log(
-            'AUTO RECEIPT: COMPLETE — PDF saved to Drive and email sent.'
-          );
-        }
-  
-      } catch (error) {
-  
-        console.error(
-          'AUTO RECEIPT: Automatic workflow failed:',
-          error
-        );
-  
-        autoReceiptProcessedRef.current = null;
-  
-        setConfirmErrorMsg(
-          error instanceof Error
-            ? error.message
-            : 'Unable to generate, save and email the official receipt.'
-        );
-      }
-    };
-  
-    // Give React one render cycle before starting.
-    const timer = setTimeout(
-      tryAutomaticReceipt,
-      500
     );
-  
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  
-  }, [
-    currentDonation?.donationId,
-    currentDonation?.paymentStatus,
-    currentDonation?.receiptUrl
-  ]);
+
+    return;
+  }
+
+  // Already processed in this mounted instance.
+  if (
+    autoReceiptProcessedRef.current ===
+    currentDonation.donationId
+  ) {
+
+    return;
+  }
+
+  // ---------------------------------------------------------
+  // IMPORTANT:
+  // Capture an IMMUTABLE snapshot of this donation.
+  // Do not allow subsequent modal changes to affect the job.
+  // ---------------------------------------------------------
+
+  const donationSnapshot: DonationRecord = {
+    ...currentDonation
+  };
+
+  // ---------------------------------------------------------
+  // Capture the currently rendered receipt immediately.
+  // ---------------------------------------------------------
+
+  const sourceElement =
+    document.getElementById(
+      'compact-digital-receipt'
+    );
+
+  if (!sourceElement) {
+
+    console.error(
+      'AUTO RECEIPT: Receipt element not available:',
+      donationSnapshot.donationId
+    );
+
+    return;
+  }
+
+  // ---------------------------------------------------------
+  // CLONE THE RECEIPT DOM.
+  //
+  // This is the critical fix.
+  //
+  // The clone survives even when:
+  // - user closes ReceiptModal
+  // - user opens another donation
+  // - user changes screen
+  // - currentDonation changes
+  // ---------------------------------------------------------
+
+  const receiptClone =
+    sourceElement.cloneNode(true) as HTMLElement;
+
+  receiptClone.setAttribute(
+    'data-receipt-background-job',
+    donationSnapshot.donationId
+  );
+
+  // Put clone outside the visible screen.
+  // DO NOT use display:none because html-to-image needs
+  // a rendered element.
+  receiptClone.style.position = 'fixed';
+  receiptClone.style.left = '-100000px';
+  receiptClone.style.top = '0';
+  receiptClone.style.zIndex = '-1';
+  receiptClone.style.pointerEvents = 'none';
+  receiptClone.style.visibility = 'visible';
+
+  document.body.appendChild(receiptClone);
+
+  console.log(
+    'AUTO RECEIPT: Background snapshot created:',
+    donationSnapshot.donationId
+  );
+
+  // ---------------------------------------------------------
+  // START BACKGROUND JOB
+  //
+  // NO cancellation on modal close/change.
+  // ---------------------------------------------------------
+
+  const processReceiptInBackground = async () => {
+
+    try {
+
+      const success =
+        await handleAutoSaveReceiptPdf(
+          donationSnapshot,
+          receiptClone
+        );
+
+      if (success) {
+
+        autoReceiptProcessedRef.current =
+          donationSnapshot.donationId;
+
+        console.log(
+          'AUTO RECEIPT: Background job completed:',
+          donationSnapshot.donationId
+        );
+      }
+
+    } catch (error) {
+
+      console.error(
+        'AUTO RECEIPT: Background job failed:',
+        donationSnapshot.donationId,
+        error
+      );
+
+    } finally {
+
+      // -------------------------------------------------------
+      // Always remove the background DOM snapshot.
+      // -------------------------------------------------------
+
+      if (receiptClone.parentNode) {
+        receiptClone.parentNode.removeChild(
+          receiptClone
+        );
+      }
+
+    }
+  };
+
+  // Start asynchronously.
+  void processReceiptInBackground();
+
+  // ---------------------------------------------------------
+  // IMPORTANT:
+  // There is intentionally NO:
+  //
+  //   let cancelled = false;
+  //
+  //   cancelled = true;
+  //
+  //   clearTimeout(...)
+  //
+  // The receipt job must survive modal changes/unmount.
+  // ---------------------------------------------------------
+
+}, [
+  currentDonation?.donationId,
+  currentDonation?.paymentStatus,
+  currentDonation?.receiptUrl
+]);
     
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:p-0 print:bg-white">
@@ -880,7 +894,7 @@ const uploadReceiptPdfToBackend = async (
                       <span className="font-bold text-amber-950">Regd. No.:</span> {trustConfig.regdNo} • <span className="font-bold text-amber-950">PAN:</span> {trustConfig.panNo || 'AAATS12018F'}
                     </div>
                     <div className="text-[9px] sm:text-[10px] font-sans text-slate-600 leading-tight truncate max-w-[420px]">
-                      {trustConfig.address || 'Flat No. 103, G5,Unnathi Greens,G.B. Road, Kasarvadavali,  Thane (West) - 400615, Maharashtra'}
+                      {trustConfig.address || ''}
                     </div>
                     <div className="text-[9px] font-sans text-slate-600">
                       <strong>Email:</strong> <span className="text-amber-900 font-bold">{trustConfig.email}</span>

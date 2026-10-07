@@ -315,7 +315,7 @@ export function DonorForm({
               {trustConfig.name}
             </h1>
             <p className="text-xs sm:text-sm text-amber-100/90 max-w-2xl leading-relaxed">
-              {trustConfig.address || 'Flat No. 103, G5,Unnathi Greens,G.B. Road, Kasarvadavali,  Thane (West) - 400615, Maharashtra'}
+              {trustConfig.address || ''}
             </p>
           </div>
         </div>
