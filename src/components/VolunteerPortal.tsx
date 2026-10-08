@@ -1812,7 +1812,20 @@ React.useEffect(() => {
             volunteers={volunteers}
             currentVolunteer={currentVolunteer}
             onViewReceipt={onViewReceipt}
-            onConfirmDonation={onConfirmDonationFromSheet || (() => {})}
+            onConfirmDonation={async (donationId: string) => {
+              if (!currentVolunteer) {
+                return {
+                  success: false,
+                  error: 'Volunteer session is not active.'
+                };
+              }
+
+              return await onVerifyDonation(
+                donationId,
+                currentVolunteer.volunteerCode,
+                currentVolunteer.volunteerName
+              );
+            }}
             onSendReceipt={onSendReceipt}
             onRepayment={onRepayment}
             onConfirmRepayment={onConfirmRepayment}
