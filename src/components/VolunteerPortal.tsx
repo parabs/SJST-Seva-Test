@@ -1820,11 +1820,52 @@ React.useEffect(() => {
                 };
               }
 
-              return await onVerifyDonation(
+              const result = await onVerifyDonation(
                 donationId,
                 currentVolunteer.volunteerCode,
                 currentVolunteer.volunteerName
               );
+
+              if (result.success) {
+
+                // Use the existing master donation record as the receipt source.
+                // This also protects us if the backend confirmation response
+                // does not return the complete DonationRecord.
+                const existingDonation =
+                  donations.find(
+                    d =>
+                      String(d.donationId).trim() ===
+                      String(donationId).trim()
+                  );
+
+                const receiptDonation: DonationRecord | undefined =
+                  result.donation?.donationId
+                    ? result.donation
+                    : existingDonation
+                      ? {
+                          ...existingDonation,
+                          paymentStatus: 'Paid',
+                          confirmedBy: currentVolunteer.volunteerCode,
+                          volunteerName: currentVolunteer.volunteerName,
+                          confirmationCode: '',
+                          receiptUrl:
+                            result.receiptUrl ||
+                            existingDonation.receiptUrl ||
+                            '',
+                          updatedAt: new Date().toISOString()
+                        }
+                      : undefined;
+
+                if (receiptDonation) {
+                  onViewReceipt(receiptDonation);
+                } else {
+                  alert(
+                    `Confirmation succeeded for ${donationId}, but the donation record could not be loaded for receipt generation.`
+                  );
+                }
+              }
+
+              return result;
             }}
             onSendReceipt={onSendReceipt}
             onRepayment={onRepayment}
