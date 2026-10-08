@@ -630,7 +630,12 @@ export async function syncDonationToGoogleSheet(
   }
 
   // 2. Direct Google Sheets API (OAuth Access Token + Spreadsheet ID) - Schema-Aware Updates
- if (!isDirectVolunteerEntry && effectiveToken && spreadsheetId) {
+  if (
+    !webhookSuccess &&
+    !isDirectVolunteerEntry &&
+    effectiveToken &&
+    spreadsheetId
+  ) {
     try {
       // Ensure tab structure exists
       const { formResponsesTab, donationsTab, rawTitles } = await ensureSheetStructure(effectiveToken, spreadsheetId);
@@ -1355,6 +1360,58 @@ export async function fetchPendingVerificationQueue(): Promise<{
       count: 0,
       error: err.message || 'Network error while fetching pending queue'
     };
+  }
+}
+
+/**
+ * Get the next sequential Donation ID from Google Apps Script.
+ *
+ * The ID is generated and reserved server-side so
+ * multiple volunteers/browsers cannot receive the same ID.
+ */
+export async function getNextDonationId(): Promise<string> {
+
+  const webhookUrl =
+    await getBackendUrl();
+
+  try {
+
+    const separator =
+      webhookUrl.includes('?')
+        ? '&'
+        : '?';
+
+    const response =
+      await fetch(
+        `${webhookUrl}${separator}action=get_next_donation_id`,
+        {
+          method: 'GET',
+          redirect: 'follow'
+        }
+      );
+
+    const result =
+      await response.json();
+
+    if (
+      !response.ok ||
+      !result.success ||
+      !result.donationId
+    ) {
+      throw new Error(
+        result.error ||
+        'Failed to generate Donation ID.'
+      );
+    }
+
+    return String(result.donationId).trim();
+
+  } catch (err: any) {
+
+    throw new Error(
+      err.message ||
+      'Unable to obtain a unique Donation ID from the backend.'
+    );
   }
 }
 

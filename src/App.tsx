@@ -431,9 +431,8 @@ function App() {
     sevaCategory: string;
     sevaHead: string;
   }): Promise<DonationRecord> => {
-    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const seq = String(donations.length + 1).padStart(4, '0');
-    const donationId = `SJST-${dateStr}-${seq}`;
+    const donationId =
+      await googleSheetsService.getNextDonationId();
     
     const confirmationCode = String(Math.floor(100000 + Math.random() * 900000));
     const paymentStatus: 'Paid' | 'Confirmation Pending' = 'Confirmation Pending';
@@ -486,9 +485,8 @@ function App() {
     volunteerName: string;
     volunteerCode: string;
   }): Promise<DonationRecord> => {
-    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const seq = String(donations.length + 1).padStart(4, '0');
-    const donationId = `SJST-${dateStr}-${seq}`;
+    const donationId =
+    await googleSheetsService.getNextDonationId();
     const confirmationCode = '';
     const confirmedBy = formData.volunteerCode;
     const volunteerName = formData.volunteerName;
