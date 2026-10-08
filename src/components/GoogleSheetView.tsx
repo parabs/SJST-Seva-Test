@@ -236,29 +236,17 @@ export function GoogleSheetView({
   });
 
   const handleExecuteConfirm = async () => {
-    alert('DEBUG 1 — Confirm button clicked');
-
     if (!confirmingDonation) {
       alert('DEBUG 2 — STOP: confirmingDonation is NULL');
       return;
     }
 
-    alert(
-      `DEBUG 2 — Donation selected\n\n` +
-      `Donation ID: ${confirmingDonation.donationId}\n` +
-      `Donor: ${confirmingDonation.donorName}\n` +
-      `Status: ${confirmingDonation.paymentStatus}`
-    );
-
     setIsProcessingConfirm(true);
 
     if (!onConfirmDonation) {
-      alert('DEBUG 3 — STOP: onConfirmDonation is NOT available');
       setIsProcessingConfirm(false);
       return;
     }
-
-    alert('DEBUG 3 — onConfirmDonation exists. Calling it now...');
 
     try {
       const result = await onConfirmDonation(
@@ -266,33 +254,16 @@ export function GoogleSheetView({
         selectedVolunteerForConfirm
       );
 
-      alert(
-        `DEBUG 4 — onConfirmDonation returned:\n\n` +
-        JSON.stringify(result, null, 2)
-      );
-
       if (!result || !result.success) {
-        alert(
-          `DEBUG 5 — CONFIRMATION FAILED\n\n` +
-          `${result?.error || 'No result returned from callback.'}`
-        );
-
         setIsProcessingConfirm(false);
         return;
       }
-
-      alert('DEBUG 5 — CONFIRMATION SUCCESS');
 
       setConfirmSuccessMsg(
         `Payment confirmed for ${confirmingDonation.donorName}!`
       );
 
     } catch (err: any) {
-      alert(
-        `DEBUG ERROR — Exception from onConfirmDonation\n\n` +
-        `${err?.message || String(err)}`
-      );
-
       setIsProcessingConfirm(false);
       return;
     }

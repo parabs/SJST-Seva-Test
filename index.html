@@ -5,6 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Shree Jagannath Seva Trust - Donation & Receipt System</title>
     <meta name="description" content="Donation collection and digital receipt system for Shree Jagannath Seva Trust" />
+        <script>
+      (function () {
+        var currentVersion = '__APP_VERSION__';
+        var versionUrl = './version.json?t=' + Date.now();
+
+        fetch(versionUrl, { cache: 'no-store' })
+          .then(function (response) {
+            if (!response.ok) return null;
+            return response.json();
+          })
+          .then(function (data) {
+            if (!data || !data.version) return;
+
+            var url = new URL(window.location.href);
+            var loadedVersion = url.searchParams.get('v');
+
+            if (
+              data.version !== currentVersion &&
+              loadedVersion !== data.version
+            ) {
+              url.searchParams.set('v', data.version);
+              window.location.replace(url.toString());
+            }
+          })
+          .catch(function () {
+            // Continue loading normally if version check fails.
+          });
+      })();
+    </script>
     <script>
       (function() {
         try {

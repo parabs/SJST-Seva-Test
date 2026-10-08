@@ -31,6 +31,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Create deployment version
+        run: |
+          mkdir -p public
+          echo "{\"version\":\"${GITHUB_SHA}\"}" > public/version.json
+          sed -i "s/__APP_VERSION__/${GITHUB_SHA}/g" index.html
+
       - name: Build
         run: npm run build
 
