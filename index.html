@@ -9,7 +9,6 @@
       (function () {
         var currentVersion = '__APP_VERSION__';
         var versionUrl = './version.json?t=' + Date.now();
-        alert("Test");
 
         fetch(versionUrl, { cache: 'no-store' })
           .then(function (response) {
