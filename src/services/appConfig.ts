@@ -26,9 +26,9 @@
  * The backend returns the configured api.backendUrl from the
  * Configuration Sheet.
  */
-const CONFIG_BOOTSTRAP_URL =
-  'https://script.google.com/macros/s/AKfycbxglEayhs9nPXWpa43RB5u0DpJl6FVJa9jH8XWL6H12x-ax8H4oOQD23RewCBRcxpfSjw/exec';
+import { FRONTEND_CONFIG } from '../config';
 
+const CONFIG_BOOTSTRAP_URL = FRONTEND_CONFIG.configBootstrapUrl;
 
 /**
  * =========================================================================
@@ -103,9 +103,13 @@ export interface PublicAppConfig {
    * Runtime Google configuration.
    */
   google?: {
-
     spreadsheetId?: string;
-
+    oauthClientId?: string;
+    assetsFolderId?: string;
+    receiptsFolderId?: string;
+    logoFileId?: string;
+    watermarkFileId?: string;
+    authorizedSenderEmail?: string;
   };
 
 }

@@ -11,6 +11,7 @@ import {
 import firebaseConfig from '../../firebase-applet-config.json';
 import { DonationRecord, TrustConfig } from '../types';
 import { sendGmailRestMessage, SendEmailResult } from '../services/gmailService';
+import { loadAppConfig } from '../services/appConfig';
 
 // Initialize Firebase App instance
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
@@ -94,8 +95,10 @@ const GMAIL_SCOPES = [
 ].join(' ');
 
 export function GmailAuthProvider({ children }: { children: React.ReactNode }) {
-  const resolvedClientId = firebaseConfig.oAuthClientId || import.meta.env.VITE_GOOGLE_CLIENT_ID || '758652931874-r8ih7nbi6dnf7tb5a85ldiq6lf5a8jcf.apps.googleusercontent.com';
-    console.log("SJST GOOGLE CLIENT ID:", resolvedClientId);
+  
+  const [resolvedClientId, setResolvedClientId] = useState('');
+  const [configLoaded, setConfigLoaded] = useState(false);
+
   const [accessToken, setAccessToken] = useState<string | null>(() => {
     return sessionStorage.getItem('sjst_gmail_access_token') || localStorage.getItem('sjst_gmail_access_token') || null;
   });
@@ -117,12 +120,50 @@ export function GmailAuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [tokenClient, setTokenClient] = useState<TokenClient | null>(null);
 
+
+  useEffect(() => {
+    let active = true;
+
+    loadAppConfig()
+      .then((config) => {
+        if (!active) return;
+
+        const clientId = config.google?.oauthClientId?.trim() || '';
+        setResolvedClientId(clientId);
+
+        if (!clientId) {
+          setError(
+            'Google OAuth Client ID is missing from the Google Configuration sheet (google.oauthClientId).'
+          );
+        }
+      })
+      .catch((err: unknown) => {
+        if (active) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : 'Unable to load Google OAuth configuration.'
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setConfigLoaded(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+
   // Initialize Google Identity Services token client when available
   useEffect(() => {
     let script: HTMLScriptElement | null = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
     
-    const initGsi = () => {
-      if (window.google?.accounts?.oauth2 && resolvedClientId) {
+      const initGsi = () => {
+        if (!configLoaded || !resolvedClientId) return;
+
+        if (window.google?.accounts?.oauth2) {
         try {
           const client = window.google.accounts.oauth2.initTokenClient({
             client_id: resolvedClientId,
@@ -162,6 +203,7 @@ export function GmailAuthProvider({ children }: { children: React.ReactNode }) {
 
                 setIsLoading(false);
                 setError(null);
+                
               }
             },
             error_callback: (err: unknown) => {
@@ -186,7 +228,7 @@ export function GmailAuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       initGsi();
     }
-  }, [resolvedClientId]);
+  }, [resolvedClientId, configLoaded]);
 
   // Listen to Firebase Auth state
   useEffect(() => {
@@ -228,6 +270,15 @@ export function GmailAuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithGoogle = async (): Promise<void> => {
     setIsLoading(true);
     setError(null);
+
+
+    if (!resolvedClientId) {
+      setError(
+        'Google OAuth Client ID is not configured. Please check the Configuration sheet.'
+      );
+      setIsLoading(false);
+      return;
+    }
 
     // 1. If GSI Token Client is ready, use it for direct token retrieval
     if (tokenClient) {
