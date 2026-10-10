@@ -569,47 +569,7 @@ export function CollectionsDashboard({
   const isVolunteer =
     String(currentVolunteer?.role || '').trim().toLowerCase() === 'volunteer';
 
-  const baseDashboard = useMemo(() => {
-    if (isVolunteer && currentVolunteer) {
-      return buildVolunteerDashboardData(donations, currentVolunteer);
-    }
-
-    return buildDashboardData(calculation);
-  }, [isVolunteer, currentVolunteer, donations, calculation]);
-
-  const dashboard = useMemo(() => {
-    // Preserve existing dashboard calculations when filters are at defaults.
-    if (!hasCollectionFilters) {
-      return baseDashboard;
-    }
-
-    // Recalculate collection metrics from the filtered donation records.
-    const filteredDashboard = buildVolunteerDashboardData(
-      filteredDashboardDonations,
-      isVolunteer ? currentVolunteer : null
-    );
-
-    // Preserve existing operational metrics and grievance reporting.
-    return {
-      ...filteredDashboard,
-      activeVolunteers: baseDashboard.activeVolunteers,
-      grievance: baseDashboard.grievance
-    };
-  }, [
-    hasCollectionFilters,
-    baseDashboard,
-    filteredDashboardDonations,
-    isVolunteer,
-    currentVolunteer
-  ]);
-
-   const hasCollectionFilters =
-    period !== 'Till Date' ||
-    selectedCategory !== 'All' ||
-    selectedSeva !== 'All' ||
-    selectedVolunteer !== 'All' ||
-    selectedPaymentMode !== 'All';
-
+ 
   const dashboardDonations = useMemo(() => {
     if (!isVolunteer || !currentVolunteer) {
       return donations;
@@ -727,7 +687,48 @@ export function CollectionsDashboard({
     isVolunteer
   ]);
 
+   const hasCollectionFilters =
+      period !== 'Till Date' ||
+      selectedCategory !== 'All' ||
+      selectedSeva !== 'All' ||
+      selectedVolunteer !== 'All' ||
+      selectedPaymentMode !== 'All';
+      
+   const baseDashboard = useMemo(() => {
+    if (isVolunteer && currentVolunteer) {
+      return buildVolunteerDashboardData(donations, currentVolunteer);
+    }
 
+    return buildDashboardData(calculation);
+  }, [isVolunteer, currentVolunteer, donations, calculation]);
+
+  
+  const dashboard = useMemo(() => {
+    // Preserve existing dashboard calculations when filters are at defaults.
+    if (!hasCollectionFilters) {
+      return baseDashboard;
+    }
+
+    // Recalculate collection metrics from the filtered donation records.
+    const filteredDashboard = buildVolunteerDashboardData(
+      filteredDashboardDonations,
+      isVolunteer ? currentVolunteer : null
+    );
+
+    // Preserve existing operational metrics and grievance reporting.
+    return {
+      ...filteredDashboard,
+      activeVolunteers: baseDashboard.activeVolunteers,
+      grievance: baseDashboard.grievance
+    };
+  }, [
+    hasCollectionFilters,
+    baseDashboard,
+    filteredDashboardDonations,
+    isVolunteer,
+    currentVolunteer
+  ]);
+  
   const activeVolunteerRows = useMemo(
     () =>
       volunteers
