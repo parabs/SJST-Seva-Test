@@ -216,17 +216,28 @@ function buildVolunteerDashboardData(
     .trim()
     .toLowerCase();
 
-  const ownDonations = donations.filter(d => {
-    const confirmedBy = String(d.confirmedBy || '')
-      .trim()
-      .toLowerCase();
+  const ownDonations = currentVolunteer
+  ? donations.filter(d => {
+      const confirmedBy = String(d.confirmedBy || '')
+        .trim()
+        .toLowerCase();
 
-    return (
-      (volunteerCode && confirmedBy.includes(volunteerCode)) ||
-      (volunteerName && confirmedBy === volunteerName) ||
-      (volunteerName && confirmedBy.startsWith(`${volunteerName} (`))
-    );
-  });
+      const volunteerCode = String(
+        currentVolunteer.volunteerCode || ''
+      ).trim().toLowerCase();
+
+      const volunteerName = String(
+        currentVolunteer.volunteerName || ''
+      ).trim().toLowerCase();
+
+      return (
+        (volunteerCode && confirmedBy.includes(volunteerCode)) ||
+        (volunteerName && confirmedBy === volunteerName) ||
+        (volunteerName &&
+          confirmedBy.startsWith(`${volunteerName} (`))
+      );
+    })
+  : donations;
 
   const byStatus = (status: string) =>
     ownDonations.filter(
@@ -558,13 +569,46 @@ export function CollectionsDashboard({
   const isVolunteer =
     String(currentVolunteer?.role || '').trim().toLowerCase() === 'volunteer';
 
-  const dashboard = useMemo(() => {
+  const hasCollectionFilters =
+    period !== 'Till Date' ||
+    selectedCategory !== 'All' ||
+    selectedSeva !== 'All' ||
+    selectedVolunteer !== 'All' ||
+    selectedPaymentMode !== 'All';
+
+  const baseDashboard = useMemo(() => {
     if (isVolunteer && currentVolunteer) {
       return buildVolunteerDashboardData(donations, currentVolunteer);
     }
 
     return buildDashboardData(calculation);
   }, [isVolunteer, currentVolunteer, donations, calculation]);
+
+  const dashboard = useMemo(() => {
+    // Preserve existing dashboard calculations when filters are at defaults.
+    if (!hasCollectionFilters) {
+      return baseDashboard;
+    }
+
+    // Recalculate collection metrics from the filtered donation records.
+    const filteredDashboard = buildVolunteerDashboardData(
+      filteredDashboardDonations,
+      isVolunteer ? currentVolunteer : null
+    );
+
+    // Preserve existing operational metrics and grievance reporting.
+    return {
+      ...filteredDashboard,
+      activeVolunteers: baseDashboard.activeVolunteers,
+      grievance: baseDashboard.grievance
+    };
+  }, [
+    hasCollectionFilters,
+    baseDashboard,
+    filteredDashboardDonations,
+    isVolunteer,
+    currentVolunteer
+  ]);
 
 
   const dashboardDonations = useMemo(() => {
@@ -592,6 +636,98 @@ export function CollectionsDashboard({
       );
     });
   }, [donations, currentVolunteer, isVolunteer]);
+
+  
+  const filteredDashboardDonations = useMemo(() => {
+    const now = new Date();
+
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const startOfQuarter = new Date(
+      now.getFullYear(),
+      Math.floor(now.getMonth() / 3) * 3,
+      1
+    );
+    const startOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1
+    );
+    const startOfWeek = new Date(now);
+    const day = startOfWeek.getDay();
+    startOfWeek.setDate(
+      startOfWeek.getDate() - (day === 0 ? 6 : day - 1)
+    );
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const periodStart: Record<string, Date | null> = {
+      'Till Date': null,
+      'This Year': startOfYear,
+      'This Quarter': startOfQuarter,
+      'This Month': startOfMonth,
+      'This Week': startOfWeek
+    };
+
+    return dashboardDonations.filter(d => {
+      const donationDate = new Date(
+        d.submittedAt || d.createdAt || d.updatedAt
+      );
+
+      if (
+        period !== 'Till Date' &&
+        periodStart[period] &&
+        (
+          Number.isNaN(donationDate.getTime()) ||
+          donationDate < periodStart[period]!
+        )
+      ) {
+        return false;
+      }
+
+      const category = d.sevaCategory || 'General Seva';
+      const seva =
+        d.sevaHead || (d as any).sevaCategory || 'General Seva';
+
+      if (
+        selectedCategory !== 'All' &&
+        category !== selectedCategory
+      ) {
+        return false;
+      }
+
+      if (selectedSeva !== 'All' && seva !== selectedSeva) {
+        return false;
+      }
+
+      if (
+        selectedPaymentMode !== 'All' &&
+        String(d.paymentMode || '').trim().toLowerCase() !==
+          selectedPaymentMode.toLowerCase()
+      ) {
+        return false;
+      }
+
+      if (!isVolunteer && selectedVolunteer !== 'All') {
+        const volunteer = String(
+          d.volunteerName || d.confirmedBy || ''
+        ).trim().toLowerCase();
+
+        if (volunteer !== selectedVolunteer.trim().toLowerCase()) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [
+    dashboardDonations,
+    period,
+    selectedCategory,
+    selectedSeva,
+    selectedVolunteer,
+    selectedPaymentMode,
+    isVolunteer
+  ]);
+
 
   const activeVolunteerRows = useMemo(
     () =>
@@ -702,7 +838,7 @@ export function CollectionsDashboard({
 
 
   const sevaRows = useMemo(() => {
-    const paid = dashboardDonations.filter(
+    const paid = filteredDashboardDonations.filter(
       d => d.paymentStatus === 'Paid'
     );
 
@@ -732,12 +868,12 @@ export function CollectionsDashboard({
     return Array.from(map.values())
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 5);
-  }, [dashboardDonations]);
+}, [filteredDashboardDonations]);
 
   const categoryRows = useMemo(() => {
     const map = new Map<string, { amount: number; count: number }>();
 
-    dashboardDonations
+    filteredDashboardDonations
       .filter(d => d.paymentStatus === 'Paid')
       .forEach(d => {
         const category = d.sevaCategory || 'General Seva';
@@ -757,10 +893,10 @@ export function CollectionsDashboard({
             : 0
       }))
       .sort((a, b) => b.amount - a.amount);
-  }, [dashboardDonations, dashboard.paidAmount]);
+  }, [filteredDashboardDonations, dashboard.paidAmount]);
 
   const recentActivity = useMemo(() => {
-    return [...dashboardDonations]
+    return [...filteredDashboardDonations]
       .filter(d => d.paymentStatus !== 'Cancelled')
       .sort((a, b) => {
         const da = new Date(a.updatedAt || a.createdAt || a.submittedAt).getTime();
@@ -768,102 +904,77 @@ export function CollectionsDashboard({
         return db - da;
       })
       .slice(0, 6);
-  }, [dashboardDonations]);
+  }, [filteredDashboardDonations]);
 
   const lastFiveDays = useMemo(() => {
-    // Volunteer dashboard: calculate collection days from
-    // the volunteer's own Paid donations.
-    if (isVolunteer) {
-      const byDay = new Map<string, { date: string; amount: number }>();
+    const byDay = new Map<string, { date: string; amount: number }>();
 
-      dashboardDonations
-        .filter(d => d.paymentStatus === 'Paid')
-        .forEach(d => {
-          // Use submittedAt as the collection/donation date.
-          // updatedAt can change later when the record is confirmed,
-          // which can incorrectly move multiple donations to one day.
-      const rawDate = d.submittedAt || d.createdAt || d.updatedAt;
+    filteredDashboardDonations
+      .filter(d => d.paymentStatus === 'Paid')
+      .forEach(d => {
+        const rawDate = d.submittedAt || d.createdAt || d.updatedAt;
 
-      let date = new Date(rawDate);
+        let date = new Date(rawDate);
 
-      // Handle DD/MM/YYYY, hh:mm:ss am/pm format
-      if (Number.isNaN(date.getTime())) {
-        const match = String(rawDate).match(
-          /^(\d{2})\/(\d{2})\/(\d{4}),\s*(\d{1,2}):(\d{2}):(\d{2})\s*(am|pm)$/i
-        );
-
-        if (match) {
-          const [, day, month, year, hour, minute, second, meridiem] = match;
-
-          let hours = Number(hour);
-
-          if (meridiem.toLowerCase() === 'pm' && hours !== 12) {
-            hours += 12;
-          }
-
-          if (meridiem.toLowerCase() === 'am' && hours === 12) {
-            hours = 0;
-          }
-
-          date = new Date(
-            Number(year),
-            Number(month) - 1,
-            Number(day),
-            hours,
-            Number(minute),
-            Number(second)
+        // Handle DD/MM/YYYY, hh:mm:ss am/pm format.
+        if (Number.isNaN(date.getTime())) {
+          const match = String(rawDate).match(
+            /^(\d{2})\/(\d{2})\/(\d{4}),\s*(\d{1,2}):(\d{2}):(\d{2})\s*(am|pm)$/i
           );
-        }
-      }
 
-      if (Number.isNaN(date.getTime())) return;
+          if (match) {
+            const [, day, month, year, hour, minute, second, meridiem] = match;
 
-          const key = [
-            date.getFullYear(),
-            String(date.getMonth() + 1).padStart(2, '0'),
-            String(date.getDate()).padStart(2, '0')
-          ].join('-');
+            let hours = Number(hour);
 
-          const existing = byDay.get(key);
+            if (meridiem.toLowerCase() === 'pm' && hours !== 12) {
+              hours += 12;
+            }
 
-          if (existing) {
-            existing.amount += Number(d.amount || 0);
-          } else {
-            byDay.set(key, {
-              date: date.toLocaleDateString('en-IN', {
-                day: 'numeric',
-                month: 'short'
-              }),
-              amount: Number(d.amount || 0)
-            });
+            if (meridiem.toLowerCase() === 'am' && hours === 12) {
+              hours = 0;
+            }
+
+            date = new Date(
+              Number(year),
+              Number(month) - 1,
+              Number(day),
+              hours,
+              Number(minute),
+              Number(second)
+            );
           }
-        });
+        }
 
-      return Array.from(byDay.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
-        .slice(-5)
-        .map(([, value]) => value);
-    }
+        if (Number.isNaN(date.getTime())) return;
 
-    // Treasurer / Trustee / Admin:
-    // keep the existing Google Sheet calculation unchanged.
-    const rows: { date: string; amount: number }[] = [];
+        const key = [
+          date.getFullYear(),
+          String(date.getMonth() + 1).padStart(2, '0'),
+          String(date.getDate()).padStart(2, '0')
+        ].join('-');
 
-    for (let row = 23; row <= 27; row++) {
-      const date = getCalcValue(calculation, row, 0);
-      const amount = numberValue(getCalcValue(calculation, row, 1));
+        const existing = byDay.get(key);
 
-      if (date !== undefined && date !== '') {
-        rows.push({
-          date: String(date),
-          amount
-        });
-      }
-    }
+        if (existing) {
+          existing.amount += Number(d.amount || 0);
+        } else {
+          byDay.set(key, {
+            date: date.toLocaleDateString('en-IN', {
+              day: 'numeric',
+              month: 'short'
+            }),
+            amount: Number(d.amount || 0)
+          });
+        }
+      });
 
-    return rows;
-  }, [isVolunteer, dashboardDonations, calculation]); 
-
+    return Array.from(byDay.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-5)
+      .map(([, value]) => value);
+  }, [filteredDashboardDonations]);
+  
   const maxDayAmount = Math.max(
     1,
     ...lastFiveDays.map(d => d.amount)
