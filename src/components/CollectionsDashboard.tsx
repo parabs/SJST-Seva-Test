@@ -569,13 +569,6 @@ export function CollectionsDashboard({
   const isVolunteer =
     String(currentVolunteer?.role || '').trim().toLowerCase() === 'volunteer';
 
-  const hasCollectionFilters =
-    period !== 'Till Date' ||
-    selectedCategory !== 'All' ||
-    selectedSeva !== 'All' ||
-    selectedVolunteer !== 'All' ||
-    selectedPaymentMode !== 'All';
-
   const baseDashboard = useMemo(() => {
     if (isVolunteer && currentVolunteer) {
       return buildVolunteerDashboardData(donations, currentVolunteer);
@@ -610,6 +603,12 @@ export function CollectionsDashboard({
     currentVolunteer
   ]);
 
+   const hasCollectionFilters =
+    period !== 'Till Date' ||
+    selectedCategory !== 'All' ||
+    selectedSeva !== 'All' ||
+    selectedVolunteer !== 'All' ||
+    selectedPaymentMode !== 'All';
 
   const dashboardDonations = useMemo(() => {
     if (!isVolunteer || !currentVolunteer) {
@@ -974,7 +973,7 @@ export function CollectionsDashboard({
       .slice(-5)
       .map(([, value]) => value);
   }, [filteredDashboardDonations]);
-  
+
   const maxDayAmount = Math.max(
     1,
     ...lastFiveDays.map(d => d.amount)
