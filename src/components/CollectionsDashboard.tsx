@@ -989,36 +989,7 @@ export function CollectionsDashboard({
   const workflowShare = (amount: number) =>
     workflowTotal > 0 ? Math.round((amount / workflowTotal) * 100) : 0;
 
-  const exportReport = () => {
-    const rows = [
-      ['Metric', 'Value'],
-      ['Paid Collection', dashboard.paidAmount],
-      ['Paid Contributions', dashboard.paidCount],
-      ['Confirmation Required', dashboard.confirmationAmount],
-      ['Confirmation Required Count', dashboard.confirmationCount],
-      ['Recollect', dashboard.recollectAmount],
-      ['Recollect Count', dashboard.recollectCount],
-      ['Repayment', dashboard.repaymentAmount],
-      ['Repayment Count', dashboard.repaymentCount],
-      ['Repayment - Dispute', dashboard.disputeCount],
-      ['Not Interested', dashboard.notInterestedCount],
-      ['Active Volunteers', dashboard.activeVolunteers]
-    ];
-
-    const csv = rows.map(row => row.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-
-    anchor.href = url;
-    anchor.download = `SJST_Detailed_Dashboard_${new Date()
-      .toISOString()
-      .slice(0, 10)}.csv`;
-
-    anchor.click();
-    URL.revokeObjectURL(url);
-  };
-
+  
   return (
     <div className="space-y-1 pb-4">
 
@@ -1085,29 +1056,33 @@ export function CollectionsDashboard({
 
               <div className="flex items-center gap-1.5">
 
-                {/* Back */}
-                <button
-                  type="button"
-                  onClick={() => onBackToPortal?.()}
-                  title="Back to Volunteer Portal"
-                  className="w-7 h-7 rounded-md bg-white/10 hover:bg-white/20 border border-white/10 text-white inline-flex items-center justify-center transition"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {/* Back */}
+                  <button
+                    type="button"
+                    onClick={() => onBackToPortal?.()}
+                    title="Back"
+                    className="h-8 px-3 rounded-md bg-white/10 hover:bg-white/20 border border-white/10 text-white text-xs font-semibold inline-flex items-center gap-2 transition"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Back</span>
+                  </button>
 
-                {/* Refresh */}
-                <button
-                  type="button"
-                  onClick={refreshCalculation}
-                  title="Refresh Dashboard"
-                  className="w-7 h-7 rounded-md bg-white/10 hover:bg-white/20 border border-white/10 text-white inline-flex items-center justify-center transition"
-                >
-                  <RefreshCw
-                    className={`w-3.5 h-3.5 ${
-                      refreshing ? 'animate-spin' : ''
-                    }`}
-                  />
-                </button>
+                  {/* Refresh */}
+                  <button
+                    type="button"
+                    onClick={refreshCalculation}
+                    title="Refresh"
+                    className="h-8 px-3 rounded-md bg-white/10 hover:bg-white/20 border border-white/10 text-white text-xs font-semibold inline-flex items-center gap-2 transition"
+                  >
+                    <RefreshCw
+                      className={`w-3.5 h-3.5 ${
+                        refreshing ? 'animate-spin' : ''
+                      }`}
+                    />
+                    <span>Refresh</span>
+                  </button>
+                </div>
 
                 {/* User */}
                 <div className="relative">
