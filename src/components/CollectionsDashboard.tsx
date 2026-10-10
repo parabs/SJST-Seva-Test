@@ -728,7 +728,7 @@ export function CollectionsDashboard({
     isVolunteer,
     currentVolunteer
   ]);
-  
+
   const activeVolunteerRows = useMemo(
     () =>
       volunteers
@@ -1107,16 +1107,6 @@ export function CollectionsDashboard({
                       refreshing ? 'animate-spin' : ''
                     }`}
                   />
-                </button>
-
-                {/* Export */}
-                <button
-                  type="button"
-                  onClick={exportReport}
-                  title="Export Report"
-                  className="w-7 h-7 rounded-md bg-white/10 hover:bg-white/20 border border-white/10 text-white inline-flex items-center justify-center transition"
-                >
-                  <Download className="w-3.5 h-3.5" />
                 </button>
 
                 {/* User */}
