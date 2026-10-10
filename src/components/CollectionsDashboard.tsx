@@ -2000,16 +2000,7 @@ export function CollectionsDashboard({
 
           </div>
 
-          <button
-            type="button"
-            onClick={onOpenVolunteerManagement}
-            className="mt-1 shrink-0 text-[9px] font-bold text-amber-800 hover:underline inline-flex items-center gap-1"
-          >
-            <Users className="w-3 h-3" />
-            Manage Volunteers
-          </button>
-
-        </section>
+      </section>
 
 
         {/* =========================================================== */}
