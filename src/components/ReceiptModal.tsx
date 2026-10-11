@@ -1184,29 +1184,6 @@ const handleAutoSaveReceiptPdf = async (
             </button>
 
             <button
-              onClick={handleDownloadPdf}
-              disabled={isGeneratingPdf}
-              className="flex-1 sm:flex-none px-4 py-1.5 bg-amber-800 hover:bg-amber-900 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
-            >
-              {isGeneratingPdf ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Generating PDF...</span>
-                </>
-              ) : downloadSuccess ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-300" />
-                  <span>Saved PDF!</span>
-                </>
-              ) : (
-                <>
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download PDF (210×105 mm)</span>
-                </>
-              )}
-            </button>
-
-            <button
               onClick={onClose}
               className="px-3.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
             >
