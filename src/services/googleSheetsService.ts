@@ -557,12 +557,6 @@ export async function syncDonationToGoogleSheet(
     directVolunteerEntry?: boolean;
   }
 ): Promise<{ success: boolean; method?: 'api' | 'webhook' | 'local'; message?: string; error?: string }> {
-  alert(
-  'DONATION DEBUG\n' +
-  'Donor: ' + (donation.donorName || '') + '\n' +
-  'Mobile: ' + (donation.mobile || '') + '\n' +
-  'Phone: ' + (donation.phone || '')
-);
   const config = { ...DEFAULT_SHEETS_CONFIG, ...customConfig };
   const isDirectVolunteerEntry =
     options?.directVolunteerEntry === true;
@@ -632,6 +626,22 @@ export async function syncDonationToGoogleSheet(
           updatedAt: formatSheetTimestamp(donation.updatedAt || donation.createdAt || donation.submittedAt)
         }
       };
+
+      alert(
+  'WEBHOOK PAYLOAD DEBUG\n' +
+  'Action: ' + (webhookPayload.action || '') + '\n' +
+  'Record Mobile: ' + (webhookPayload.record?.mobile || '') + '\n' +
+  'Record Phone: ' + (webhookPayload.record?.phone || '') + '\n' +
+  'Webhook URL configured: ' + Boolean(webhookUrl)
+);
+
+alert(
+  'WEBHOOK PAYLOAD DEBUG\n' +
+  'Action: ' + (webhookPayload.action || '') + '\n' +
+  'Record Mobile: ' + (webhookPayload.record?.mobile || '') + '\n' +
+  'Record Phone: ' + (webhookPayload.record?.phone || '') + '\n' +
+  'Webhook URL configured: ' + Boolean(webhookUrl)
+);
 
       await fetch(webhookUrl, {
         method: 'POST',
