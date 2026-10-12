@@ -760,46 +760,35 @@ export function DonorForm({
                 </div>
               </div>
 
-                              <input
-                  type="email"
-                  required
-                  placeholder="e.g. devotee@gmail.com"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-amber-700 text-sm font-medium text-slate-900 bg-slate-50/50"
-                />
-              </div>
-            </div>
-
-            {/* Mobile Number */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Mobile Number <span className="text-rose-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Phone className="w-4 h-4" />
+              {/* Mobile Number */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Mobile Number <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    required
+                    maxLength={10}
+                    pattern="[6-9][0-9]{9}"
+                    title="Enter a valid 10-digit Indian mobile number"
+                    placeholder="e.g. 9876543210"
+                    value={mobile}
+                    onChange={e =>
+                      setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))
+                    }
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-amber-700 text-sm font-medium text-slate-900 bg-slate-50/50"
+                  />
                 </div>
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel"
-                  required
-                  maxLength={10}
-                  pattern="[6-9][0-9]{9}"
-                  title="Enter a valid 10-digit Indian mobile number"
-                  placeholder="e.g. 9876543210"
-                  value={mobile}
-                  onChange={e =>
-                    setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))
-                  }
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-amber-700 text-sm font-medium text-slate-900 bg-slate-50/50"
-                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Enter a 10-digit Indian mobile number.
+                </p>
               </div>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Enter a 10-digit Indian mobile number.
-              </p>
-            </div>
           </div>
 
           {/* Seva Category & Head Selector */}
