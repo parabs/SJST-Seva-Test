@@ -231,7 +231,7 @@ export function buildHeaderMappedDonationsRow(headers: string[] | undefined, d: 
     }
 
     if (
-      h.includes('donor') ||
+      (h.includes('donor') && !h.includes('mobile') && !h.includes('phone')) ||
       h.includes('contributor') ||
       h.includes('devotee') ||
       (h.includes('name') && !h.includes('volunteer'))
