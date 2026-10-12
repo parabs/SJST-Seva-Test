@@ -1171,7 +1171,7 @@ export async function fetchDonationsFromGoogleSheet(
 
     // If no access token is present, fetch via the Google Apps Script Webhook (GET)
     if (!accessToken && webhookUrl) {
-      const res = await fetch(webhookUrl);
+      const res = await fetch(`${webhookUrl}?action=get_donations`);
       const json = await res.json();
       if (json.success && json.values) {
         allRows = json.values;

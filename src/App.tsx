@@ -426,6 +426,7 @@ function App() {
   const handleDonorSubmit = async (formData: {
     donorName: string;
     email: string;
+    mobile: string;
     amount: number;
     paymentMode: 'Cash' | 'UPI';
     sevaCategory: string;
@@ -445,8 +446,8 @@ function App() {
       donationId,
       submittedAt: new Date().toISOString(),
       donorName: formData.donorName,
-      mobile: '',
-      phone: '',
+      mobile: formData.mobile.trim(),
+      phone: formData.mobile.trim(),
       email: formData.email,
       amount: formData.amount,
       paymentMode: formData.paymentMode,
