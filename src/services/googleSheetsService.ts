@@ -557,7 +557,12 @@ export async function syncDonationToGoogleSheet(
     directVolunteerEntry?: boolean;
   }
 ): Promise<{ success: boolean; method?: 'api' | 'webhook' | 'local'; message?: string; error?: string }> {
-  alert('DEBUG: syncDonationToGoogleSheet STARTED');
+  alert(
+  'DONATION DEBUG\n' +
+  'Donor: ' + (donation.donorName || '') + '\n' +
+  'Mobile: ' + (donation.mobile || '') + '\n' +
+  'Phone: ' + (donation.phone || '')
+);
   const config = { ...DEFAULT_SHEETS_CONFIG, ...customConfig };
   const isDirectVolunteerEntry =
     options?.directVolunteerEntry === true;
