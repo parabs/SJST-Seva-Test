@@ -133,7 +133,7 @@ export function buildHeaderMappedFormRow(headers: string[] | undefined, d: Donat
       return d.donorName || 'Devotee';
     }
     if (h.includes('mobile') || h.includes('phone') || h.includes('contact')) {
-      return emailAddr || d.mobile || '';
+      return d.mobile || d.phone || '';
     }
     if (idx < defaultRow.length) {
       return defaultRow[idx];
@@ -192,16 +192,18 @@ export function buildHeaderMappedDonationsRow(headers: string[] | undefined, d: 
     formatSheetTimestamp(d.updatedAt), // Col N (14) - Updated At
     d.confirmedBy || '', // Col O - Confirmed By / Volunteer Code
     d.confirmationCode || '', // Col P - Confirmation Code
-    d.volunteerName || '' // Col Q - Volunteer Name
+    d.volunteerName || '', // Col Q - Volunteer Name
+    '',                     // Col R - Cancelled by
+    d.mobile || d.phone || '' // Col S - Donor Mobile
   ];
 
   if (!headers || headers.length === 0) {
     return defaultRow;
   }
-
+ 
     return headers.map((hRaw, idx) => {
     const h = (hRaw || '').toLowerCase().trim();
-
+    
     if (
       h.includes('donation id') ||
       h === 'id' ||
@@ -348,6 +350,14 @@ export function buildHeaderMappedDonationsRow(headers: string[] | undefined, d: 
       return d.confirmedBy || '';
     }
 
+    if (h.includes('mobile') || h.includes('phone')) {
+      return d.mobile || d.phone || '';
+    }
+
+    if (h.includes('cancelled by') || h.includes('canceled by')) {
+      return '';
+    }
+
     if (idx < defaultRow.length) {
       return defaultRow[idx];
     }
@@ -475,14 +485,16 @@ export async function ensureSheetStructure(
               'Created At',
               'Updated At',
               'Confirmed by',
-              'Confirmation Code',
-              'Volunteer Name'
+              'Confirmation Code', // Col P
+              'Volunteer Name',    // Col Q
+              'Cancelled by',      // Col R
+              'Donor Mobile'       // Col S
             ]];
 
-            await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(cleanId)}/values/${encodeURIComponent(formatA1Range('Donations', 'A1:Q1'))}?valueInputOption=USER_ENTERED`, {
+            await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(cleanId)}/values/${encodeURIComponent(formatA1Range('Donations', 'A1:S1'))}?valueInputOption=USER_ENTERED`, {
               method: 'PUT',
               headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ range: formatA1Range('Donations', 'A1:Q1'), majorDimension: 'ROWS', values: donHeaders })
+              body: JSON.stringify({ range: formatA1Range('Donations', 'A1:S1'), majorDimension: 'ROWS', values: donHeaders })
             }).catch(() => {});
           }
         }
@@ -799,7 +811,7 @@ export async function syncDonationToGoogleSheet(
       // B. Donations Master Ledger (A:O)
       // ========================================================
       // Read Donations tab to check headers and if row already exists
-      const readUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(formatA1Range(donationsTab, 'A1:Q'))}`;
+      const readUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(formatA1Range(donationsTab, 'A1:S'))}`;
       
       const readRes = await fetch(readUrl, {
         headers: { Authorization: `Bearer ${effectiveToken}` }
@@ -837,7 +849,7 @@ export async function syncDonationToGoogleSheet(
 
       if (foundRowIndex > 0) {
         // UPDATE existing row in Donations tab
-        const updateRange = formatA1Range(donationsTab, `A${foundRowIndex}:Q${foundRowIndex}`);
+        const updateRange = formatA1Range(donationsTab, `A${foundRowIndex}:S${foundRowIndex}`);
         const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(updateRange)}?valueInputOption=USER_ENTERED`;
         
         const updateRes = await fetch(updateUrl, {
@@ -877,7 +889,7 @@ export async function syncDonationToGoogleSheet(
 
         // If Donations tab append failed with range error and fallback tab exists, try rawTitles[0]
         if (!appendRes.ok && rawTitles.length > 0 && rawTitles[0] !== donationsTab) {
-          const fallbackDonUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(formatA1Range(rawTitles[0], 'A:Q'))}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+          const fallbackDonUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(formatA1Range(rawTitles[0], 'A:S'))}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
           const retryDonRes = await fetch(fallbackDonUrl, {
             method: 'POST',
             headers: {
@@ -988,11 +1000,11 @@ export async function batchSyncAllDonations(
     });
 
     // Append to Donations
-    const donUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(formatA1Range(donationsTab, 'A:Q'))}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+    const donUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(formatA1Range(donationsTab, 'A:S'))}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
     const donRes = await fetch(donUrl, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ range: formatA1Range(donationsTab, 'A:Q'), majorDimension: 'ROWS', values: donRows })
+      body: JSON.stringify({ range: formatA1Range(donationsTab, 'A:S'), majorDimension: 'ROWS', values: donRows })
     });
 
     if (donRes.ok) {
@@ -1033,7 +1045,7 @@ export async function repairAndAlignGoogleSheetHeaders(
     const donHeaders = [[
       'Donation ID', 'Submitted At', 'Towards (Seva Head / Category)', 'Donor Name', 'Email',
       'Amount', 'Payment Mode', 'Payment Status', 'Payment Reference', 'Final Receipt URL',
-      'Email Status', 'Email Message ID', 'Created At', 'Updated At', 'Confirmed by', 'Confirmation Code', 'Volunteer Name'
+      'Email Status', 'Email Message ID', 'Created At', 'Updated At', 'Confirmed by', 'Confirmation Code', 'Volunteer Name','Cancelled by', 'Donor Mobile'
     ]];
 
     // Overwrite Row 1 in Form Responses
@@ -1047,7 +1059,7 @@ export async function repairAndAlignGoogleSheetHeaders(
     await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(formatA1Range(donationsTab, 'A1:Q1'))}?valueInputOption=USER_ENTERED`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ range: formatA1Range(donationsTab, 'A1:Q1'), majorDimension: 'ROWS', values: donHeaders })
+      body: JSON.stringify({ range: formatA1Range(donationsTab, 'A1:S1'), majorDimension: 'ROWS', values: donHeaders })
     });
 
     return {
@@ -1171,7 +1183,7 @@ export async function fetchDonationsFromGoogleSheet(
 
     // If no access token is present, fetch via the Google Apps Script Webhook (GET)
     if (!accessToken && webhookUrl) {
-      const res = await fetch(`${webhookUrl}?action=get_donations`);
+      const res = await fetch(webhookUrl);
       const json = await res.json();
       if (json.success && json.values) {
         allRows = json.values;
@@ -1180,7 +1192,7 @@ export async function fetchDonationsFromGoogleSheet(
       }
     } else {
       // Standard Google Sheets API fetch when OAuth token is available
-      const range = formatA1Range(sheetName, 'A1:Q');
+      const range = formatA1Range(sheetName, 'A1:S');
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(configuredSpreadsheetId)}/values/${encodeURIComponent(range)}`;
       const response = await fetch(url, {
         headers: {
@@ -1226,6 +1238,7 @@ export async function fetchDonationsFromGoogleSheet(
     const confirmIdx = findCol(['confirmed by', 'verified by']);
     const codeIdx = findCol(['confirmation code']);
     const volunteerNameIdx = findCol(['volunteer name']);
+    const mobileIdx = findCol(['donor mobile', 'mobile', 'phone']);
     const donations: DonationRecord[] = dataRows.map((row, index) => {
       const donationId = (idIdx >= 0 && row[idIdx]) ? String(row[idIdx]).trim() : `SJST-${Date.now()}-${index}`;
       const submittedAt = (timeIdx >= 0 && row[timeIdx]) ? String(row[timeIdx]).trim() : new Date().toISOString();
@@ -1261,6 +1274,7 @@ export async function fetchDonationsFromGoogleSheet(
         volunteerNameIdx >= 0 && row[volunteerNameIdx]
           ? String(row[volunteerNameIdx]).trim()
           : '';
+      
           
       const confirmationCode = (codeIdx >= 0 && row[codeIdx]) 
         ? String(row[codeIdx]).trim() 
@@ -1269,13 +1283,19 @@ export async function fetchDonationsFromGoogleSheet(
             return codeMatch ? codeMatch[0] : '';
           })();
           
+
+      const mobile =
+        mobileIdx >= 0 && row[mobileIdx]
+          ? String(row[mobileIdx]).trim()
+          : '';
+
       return {
         donationId,
         submittedAt,
         donorName,
-        mobile: '',
+        mobile,
         email,
-        phone: '',
+        phone: mobile,
         amount,
         paymentMode,
         paymentStatus,

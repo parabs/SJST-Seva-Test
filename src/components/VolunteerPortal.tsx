@@ -50,6 +50,7 @@ interface VolunteerPortalProps {
   onDirectDonationSubmit?: (formData: {
     donorName: string;
     email: string;
+    mobile: string;
     amount: number;
     paymentMode: 'Cash' | 'UPI';
     sevaCategory: string;
@@ -179,6 +180,7 @@ React.useEffect(() => {
   // Direct Counter Entry Form State
   const [directDonorName, setDirectDonorName] = useState('');
   const [directEmail, setDirectEmail] = useState('');
+  const [directMobile, setDirectMobile] = useState('');
   const [directSelectedCategory, setDirectSelectedCategory] = useState<string>(SEVA_CATEGORIES[0]?.category || 'General Seva');
   const [directSelectedSeva, setDirectSelectedSeva] = useState<string>(SEVA_CATEGORIES[0]?.items[0]?.id || 'murti-5001');
   const [directAmount, setDirectAmount] = useState<number>(SEVA_CATEGORIES[0]?.items[0]?.amount || 5001);
@@ -409,6 +411,7 @@ React.useEffect(() => {
         const record = await onDirectDonationSubmit({
           donorName: directDonorName.trim(),
           email: directEmail.trim(),
+          mobile: directMobile.trim(),
           amount: Number(directAmount),
           paymentMode: directPaymentMode,
           sevaCategory: directSelectedCategory,
@@ -437,6 +440,7 @@ React.useEffect(() => {
         setDirectDonorName('');
         setDirectEmail('');
         setDirectCustomHead('');
+        setDirectMobile('');
       }
     } catch (err: any) {
       alert(`Error recording contribution: ${err.message || 'Please retry'}`);
@@ -1301,6 +1305,26 @@ React.useEffect(() => {
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-amber-700 text-sm font-semibold text-slate-900 bg-slate-50 font-mono"
                   />
                 </div>
+
+                {/* Devotee Mobile Number */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Devotee Mobile Number
+                  </label>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    maxLength={10}
+                    placeholder="e.g. 9876543210"
+                    value={directMobile}
+                    onChange={e =>
+                      setDirectMobile(e.target.value.replace(/\D/g, '').slice(0, 10))
+                    }
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-amber-700 text-sm font-semibold text-slate-900 bg-slate-50"
+                  />
+                </div>
+
               </div>
 
               {/* Seva Category & Seva Head Selection */}
