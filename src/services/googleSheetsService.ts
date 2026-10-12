@@ -550,7 +550,6 @@ export async function ensureSheetStructure(
  *    - If row not found in Donations, appends it as Paid.
  */
 export async function syncDonationToGoogleSheet(
-  alert('DEBUG: syncDonationToGoogleSheet STARTED');
   donation: DonationRecord,
   accessToken?: string | null,
   customConfig?: Partial<GoogleSheetsSyncConfig>,
@@ -558,6 +557,7 @@ export async function syncDonationToGoogleSheet(
     directVolunteerEntry?: boolean;
   }
 ): Promise<{ success: boolean; method?: 'api' | 'webhook' | 'local'; message?: string; error?: string }> {
+  alert('DEBUG: syncDonationToGoogleSheet STARTED');
   const config = { ...DEFAULT_SHEETS_CONFIG, ...customConfig };
   const isDirectVolunteerEntry =
     options?.directVolunteerEntry === true;
