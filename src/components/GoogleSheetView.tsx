@@ -31,7 +31,9 @@ const OPTIONAL_COLUMNS = [
   { key: 'updatedAt', label: 'Updated At', defaultVisible: false },
   { key: 'confirmationCode', label: 'Confirmation Code', defaultVisible: false },
   { key: 'emailStatus', label: 'Email Status', defaultVisible: false },
-  { key: 'emailMessageId', label: 'Email Message ID', defaultVisible: false }
+  { key: 'emailMessageId', label: 'Email Message ID', defaultVisible: false },
+
+  { key: 'receipt', label: 'Receipt', defaultVisible: true }
 ] as const;
 
 type OptionalColumnKey =
@@ -360,6 +362,23 @@ const toggleOptionalColumn = (
           </td>
         );
 
+      case 'receipt':
+        return (
+          <td key={column} className="py-3 px-3">
+            {row.receiptUrl ? (
+              <button
+                type="button"
+                onClick={() => onViewReceipt(row)}
+                className="px-2.5 py-1 bg-amber-800 hover:bg-amber-900 text-white rounded-lg text-[10px] font-bold inline-flex items-center gap-1 transition cursor-pointer"
+              >
+                <Receipt className="w-3 h-3" />
+                <span>View Receipt</span>
+              </button>
+            ) : (
+              <span className="text-slate-300">—</span>
+            )}
+          </td>
+        );    
 
       case 'confirmedBy':
         return (
@@ -826,102 +845,55 @@ const toggleOptionalColumn = (
                   </tr>
                 ) : (
                   filteredDonations.map(row => (
-                    <tr
-                      key={`${row.donationId}-${row.submittedAt}-${row.paymentReference}`}
-                      className="hover:bg-amber-50/30 transition"
-                    >
-                      {/* Donation ID */}
-                      <td className="py-3 px-3 font-mono font-bold text-slate-900">
-                        {row.donationId}
-                      </td>
+                    {/* Fixed column 1: Donation ID */}
+                    <td className="py-3 px-3 font-mono font-bold text-slate-900">
+                      {row.donationId}
+                    </td>
 
-                      {/* Towards / Seva */}
-                      <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-900 font-bold text-[10px]">
-                          {row.sevaHead || row.sevaCategory || 'General Seva'}
-                        </span>
-                      </td>
+                    {/* Fixed column 2: Donor Name */}
+                    <td className="py-3 px-3 font-bold text-slate-800">
+                      {row.donorName || '—'}
+                    </td>
 
-                      {/* Donor Name */}
-                      <td className="py-3 px-3 font-bold text-slate-800">
-                        {row.donorName || '—'}
-                      </td>
+                    {/* Fixed column 3: Towards / Seva */}
+                    <td className="py-3 px-3">
+                      <span className="px-2 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-900 font-bold text-[10px]">
+                        {row.sevaHead || row.sevaCategory || 'General Seva'}
+                      </span>
+                    </td>
 
-                      {/* Email */}
-                      <td className="py-3 px-3 font-mono text-slate-600">
-                        {row.email || '—'}
-                      </td>
+                    {/* Fixed column 4: Amount */}
+                    <td className="py-3 px-3 text-right font-black font-mono text-slate-900">
+                      ₹{Number(row.amount || 0).toLocaleString('en-IN')}
+                    </td>
 
-                      {/* Amount */}
-                      <td className="py-3 px-3 text-right font-black font-mono text-slate-900">
-                        ₹{Number(row.amount || 0).toLocaleString('en-IN')}
-                      </td>
+                    {/* Optional columns: cells follow the selected header order */}
+                    {visibleOptionalColumns.map(column =>
+                      renderOptionalCell(column.key, row)
+                    )}
 
-                      {/* Payment Mode */}
-                      <td className="py-3 px-3">
-                        <span
-                          className={`px-2 py-0.5 rounded font-bold uppercase text-[10px] ${
-                            row.paymentMode === 'UPI'
-                              ? 'bg-amber-100 text-amber-900'
-                              : 'bg-emerald-100 text-emerald-800'
-                          }`}
-                        >
-                          {row.paymentMode || '—'}
-                        </span>
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-3 px-3">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            row.paymentStatus === 'Paid'
-                              ? 'bg-emerald-100 text-emerald-800'
+                    {/* Fixed column 5: Status */}
+                    <td className="py-3 px-3">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          row.paymentStatus === 'Paid'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : row.paymentStatus === 'Cancelled'
+                              ? 'bg-red-100 text-red-800'
                               : 'bg-amber-100 text-amber-800'
-                          }`}
-                        >
-                          {row.paymentStatus === 'Paid' ? (
-                            <CheckCircle2 className="w-3 h-3" />
-                          ) : (
-                            <Clock className="w-3 h-3" />
-                          )}
+                        }`}
+                      >
+                        {row.paymentStatus === 'Paid' ? (
+                          <CheckCircle2 className="w-3 h-3" />
+                        ) : (
+                          <Clock className="w-3 h-3" />
+                        )}
 
-                          <span>{row.paymentStatus || 'Confirmation Pending'}</span>
+                        <span>
+                          {row.paymentStatus || 'Confirmation Pending'}
                         </span>
-                      </td>
-
-                      {/* Donation Date */}
-                      <td className="py-3 px-3 text-slate-600 text-[11px]">
-                        {row.createdAt || row.submittedAt || '—'}
-                      </td>
-
-                      {/* Confirmed By / Volunteer Name */}
-                      <td className="py-3 px-3 text-slate-600 font-medium">
-                        {row.volunteerName ? (
-                          <span className="bg-emerald-50 text-emerald-900 px-2 py-0.5 rounded border border-emerald-200 font-bold text-[11px]">
-                            {row.volunteerName}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 italic text-[11px]">
-                            Pending
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Receipt */}
-                      <td className="py-3 px-3">
-                        {row.receiptUrl ? (
-                          <button
-                            type="button"
-                            onClick={() => onViewReceipt(row)}
-                            className="px-2.5 py-1 bg-amber-800 hover:bg-amber-900 text-white rounded-lg text-[10px] font-bold inline-flex items-center gap-1 transition cursor-pointer"
-                          >
-                            <Receipt className="w-3 h-3" />
-                            <span>View Receipte</span>
-                          </button>
-                        ) : (
-                          <span className="text-slate-300">—</span>
-                        )}
-                      </td>
+                      </span>
+                    </td>
 
                       {/* Action */}
                       <td className="py-3 px-3 text-center">
