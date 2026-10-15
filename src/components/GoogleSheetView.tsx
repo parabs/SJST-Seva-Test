@@ -31,16 +31,15 @@ const OPTIONAL_COLUMNS = [
   { key: 'updatedAt', label: 'Updated At', defaultVisible: false },
   { key: 'confirmationCode', label: 'Confirmation Code', defaultVisible: false },
   { key: 'emailStatus', label: 'Email Status', defaultVisible: false },
-  { key: 'emailMessageId', label: 'Email Message ID', defaultVisible: false },
+  { key: 'emailMessageId', label: 'Email Message ID', defaultVisible: false }
 
-  { key: 'receipt', label: 'Receipt', defaultVisible: true }
 ] as const;
 
 type OptionalColumnKey =
   typeof OPTIONAL_COLUMNS[number]['key'];
 
 const COLUMN_PREFERENCES_STORAGE_KEY =
-  'sjst_live_sheet_visible_columns';
+  'sjst_live_sheet_visible_columns_v2';
 
 interface GoogleSheetViewProps {
   donations: DonationRecord[];
@@ -397,7 +396,7 @@ const toggleOptionalColumn = (
       case 'createdAt':
         return (
           <td key={column} className="py-3 px-3 text-slate-600">
-            {row.createdAt || '—'}
+            {row.createdAt || row.submittedAt || '—'}
           </td>
         );
 
@@ -839,61 +838,65 @@ const toggleOptionalColumn = (
               <tbody className="divide-y divide-slate-200 font-normal">
                 {filteredDonations.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="py-10 text-center text-slate-400 text-xs">
+                    <<td colSpan={6 + visibleOptionalColumns.length} className="py-10 text-center text-slate-400 text-xs">
                       No donation records match the selected filters.
                     </td>
                   </tr>
                 ) : (
                   filteredDonations.map(row => (
-                    {/* Fixed column 1: Donation ID */}
-                    <td className="py-3 px-3 font-mono font-bold text-slate-900">
-                      {row.donationId}
-                    </td>
+                    <tr
+                      key={`${row.donationId}-${row.submittedAt}-${row.paymentReference}`}
+                      className="hover:bg-amber-50/30 transition"
+                    >
+                      {/* Fixed column 1: Donation ID */}
+                      <td className="py-3 px-3 font-mono font-bold text-slate-900">
+                        {row.donationId}
+                      </td>
 
-                    {/* Fixed column 2: Donor Name */}
-                    <td className="py-3 px-3 font-bold text-slate-800">
-                      {row.donorName || '—'}
-                    </td>
+                      {/* Fixed column 2: Donor Name */}
+                      <td className="py-3 px-3 font-bold text-slate-800">
+                        {row.donorName || '—'}
+                      </td>
 
-                    {/* Fixed column 3: Towards / Seva */}
-                    <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-900 font-bold text-[10px]">
-                        {row.sevaHead || row.sevaCategory || 'General Seva'}
-                      </span>
-                    </td>
-
-                    {/* Fixed column 4: Amount */}
-                    <td className="py-3 px-3 text-right font-black font-mono text-slate-900">
-                      ₹{Number(row.amount || 0).toLocaleString('en-IN')}
-                    </td>
-
-                    {/* Optional columns: cells follow the selected header order */}
-                    {visibleOptionalColumns.map(column =>
-                      renderOptionalCell(column.key, row)
-                    )}
-
-                    {/* Fixed column 5: Status */}
-                    <td className="py-3 px-3">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          row.paymentStatus === 'Paid'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : row.paymentStatus === 'Cancelled'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-amber-100 text-amber-800'
-                        }`}
-                      >
-                        {row.paymentStatus === 'Paid' ? (
-                          <CheckCircle2 className="w-3 h-3" />
-                        ) : (
-                          <Clock className="w-3 h-3" />
-                        )}
-
-                        <span>
-                          {row.paymentStatus || 'Confirmation Pending'}
+                      {/* Fixed column 3: Towards / Seva */}
+                      <td className="py-3 px-3">
+                        <span className="px-2 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-900 font-bold text-[10px]">
+                          {row.sevaHead || row.sevaCategory || 'General Seva'}
                         </span>
-                      </span>
-                    </td>
+                      </td>
+
+                      {/* Fixed column 4: Amount */}
+                      <td className="py-3 px-3 text-right font-black font-mono text-slate-900">
+                        ₹{Number(row.amount || 0).toLocaleString('en-IN')}
+                      </td>
+
+                      {/* Optional columns: cells follow the selected header order */}
+                      {visibleOptionalColumns.map(column =>
+                        renderOptionalCell(column.key, row)
+                      )}
+
+                      {/* Fixed column 5: Status */}
+                      <td className="py-3 px-3">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            row.paymentStatus === 'Paid'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : row.paymentStatus === 'Cancelled'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {row.paymentStatus === 'Paid' ? (
+                            <CheckCircle2 className="w-3 h-3" />
+                          ) : (
+                            <Clock className="w-3 h-3" />
+                          )}
+
+                          <span>
+                            {row.paymentStatus || 'Confirmation Pending'}
+                          </span>
+                        </span>
+                      </td>
 
                       {/* Action */}
                       <td className="py-3 px-3 text-center">
