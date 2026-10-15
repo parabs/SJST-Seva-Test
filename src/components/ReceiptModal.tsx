@@ -79,11 +79,11 @@ export function ReceiptModal({
 
   const amountWords = numberToWordsInr(currentDonation.amount);
 
-  // Clean Receipt No Display
-  const receiptNoDisplay =
-    currentDonation.receiptNumber != null
-      ? String(currentDonation.receiptNumber)
-      : 'Pending';
+    // Clean Receipt No Display
+    const receiptNoDisplay =
+      currentDonation.receiptNumber != null
+        ? String(currentDonation.receiptNumber)
+        : 'Pending';
 
   // Real Browser Print
   const handlePrint = () => {
@@ -624,6 +624,18 @@ const handleAutoSaveReceiptPdf = async (
   const donationSnapshot: DonationRecord = {
     ...currentDonation
   };
+
+  alert(
+    'RECEIPT NUMBER DEBUG\n\n' +
+    'Donation ID: ' + donationSnapshot.donationId + '\n' +
+    'Payment Status: ' + donationSnapshot.paymentStatus + '\n' +
+    'Receipt Number Received: ' +
+    (
+      donationSnapshot.receiptNumber != null
+        ? String(donationSnapshot.receiptNumber)
+        : 'NOT RECEIVED'
+    )
+  );
 
   // ---------------------------------------------------------
   // Capture the currently rendered receipt immediately.
