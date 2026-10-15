@@ -11,11 +11,33 @@ import {
   Download,
   Check,
   X,
-  RefreshCw
+  RefreshCw,
+  SlidersHorizontal
 } from 'lucide-react';
 import { DonationRecord, VolunteerRecord } from '../types';
 import { useGmailAuth } from '../context/GmailAuthContext';
 import { loadAppConfig } from '../services/appConfig';
+
+const OPTIONAL_COLUMNS = [
+  { key: 'submittedAt', label: 'Submitted At', defaultVisible: false },
+  { key: 'mobile', label: 'Mobile Number', defaultVisible: true },
+  { key: 'email', label: 'Email', defaultVisible: true },
+  { key: 'paymentMode', label: 'Payment Mode', defaultVisible: true },
+  { key: 'paymentReference', label: 'Payment Reference', defaultVisible: true },
+  { key: 'confirmedBy', label: 'Confirmed By', defaultVisible: true },
+  { key: 'volunteerName', label: 'Volunteer Name', defaultVisible: false },
+  { key: 'createdAt', label: 'Created At', defaultVisible: false },
+  { key: 'updatedAt', label: 'Updated At', defaultVisible: false },
+  { key: 'confirmationCode', label: 'Confirmation Code', defaultVisible: false },
+  { key: 'emailStatus', label: 'Email Status', defaultVisible: false },
+  { key: 'emailMessageId', label: 'Email Message ID', defaultVisible: false }
+] as const;
+
+type OptionalColumnKey =
+  typeof OPTIONAL_COLUMNS[number]['key'];
+
+const COLUMN_PREFERENCES_STORAGE_KEY =
+  'sjst_live_sheet_visible_columns';
 
 interface GoogleSheetViewProps {
   donations: DonationRecord[];
@@ -56,6 +78,69 @@ export function GoogleSheetView({
   const [volunteerFilter, setVolunteerFilter] = useState<string>('All');
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
   const [spreadsheetUrl, setSpreadsheetUrl] = useState('');
+
+
+  const [showColumnMenu, setShowColumnMenu] = useState(false);
+
+const [selectedOptionalColumns, setSelectedOptionalColumns] =
+  useState<OptionalColumnKey[]>(() => {
+    const defaultColumns = OPTIONAL_COLUMNS
+      .filter(column => column.defaultVisible)
+      .map(column => column.key) as OptionalColumnKey[];
+
+    if (typeof window === 'undefined') return defaultColumns;
+
+    try {
+      const saved = window.localStorage.getItem(
+        COLUMN_PREFERENCES_STORAGE_KEY
+      );
+
+      if (!saved) return defaultColumns;
+
+      const parsed: unknown = JSON.parse(saved);
+
+      if (!Array.isArray(parsed)) return defaultColumns;
+
+      return OPTIONAL_COLUMNS
+        .filter(column => parsed.includes(column.key))
+        .map(column => column.key) as OptionalColumnKey[];
+    } catch {
+      return defaultColumns;
+    }
+  });
+
+const visibleOptionalColumns = OPTIONAL_COLUMNS.filter(column =>
+  selectedOptionalColumns.includes(column.key)
+);
+
+useEffect(() => {
+  try {
+    window.localStorage.setItem(
+      COLUMN_PREFERENCES_STORAGE_KEY,
+      JSON.stringify(selectedOptionalColumns)
+    );
+  } catch (error) {
+    console.warn(
+      'Unable to save Live Sheet column preferences:',
+      error
+    );
+  }
+}, [selectedOptionalColumns]);
+
+const toggleOptionalColumn = (
+  key: OptionalColumnKey,
+  checked: boolean
+) => {
+  setSelectedOptionalColumns(previous => {
+    if (checked) {
+      return previous.includes(key)
+        ? previous
+        : [...previous, key];
+    }
+
+    return previous.filter(column => column !== key);
+  });
+};
 
     useEffect(() => {
     let isMounted = true;
@@ -235,6 +320,106 @@ export function GoogleSheetView({
     );
   });
 
+  const renderOptionalCell = (
+    column: OptionalColumnKey,
+    row: DonationRecord
+  ) => {
+    switch (column) {
+      case 'submittedAt':
+        return (
+          <td key={column} className="py-3 px-3 text-slate-600">
+            {row.submittedAt || '—'}
+          </td>
+        );
+
+      case 'mobile':
+        return (
+          <td key={column} className="py-3 px-3 font-mono text-slate-700">
+            {row.mobile || row.phone || '—'}
+          </td>
+        );
+
+      case 'email':
+        return (
+          <td key={column} className="py-3 px-3 font-mono text-slate-600">
+            {row.email || '—'}
+          </td>
+        );
+
+      case 'paymentMode':
+        return (
+          <td key={column} className="py-3 px-3">
+            <span className={`px-2 py-0.5 rounded font-bold uppercase text-[10px] ${
+              row.paymentMode === 'UPI'
+                ? 'bg-amber-100 text-amber-900'
+                : 'bg-emerald-100 text-emerald-800'
+            }`}>
+              {row.paymentMode || '—'}
+            </span>
+          </td>
+        );
+
+      case 'paymentReference':
+        return (
+          <td key={column} className="py-3 px-3 font-mono text-slate-600 text-[11px]">
+            {row.paymentReference || '—'}
+          </td>
+        );
+
+      case 'confirmedBy':
+        return (
+          <td key={column} className="py-3 px-3 text-slate-600 font-medium">
+            {row.confirmedBy || '—'}
+          </td>
+        );
+
+      case 'volunteerName':
+        return (
+          <td key={column} className="py-3 px-3 text-slate-600">
+            {row.volunteerName || '—'}
+          </td>
+        );
+
+      case 'createdAt':
+        return (
+          <td key={column} className="py-3 px-3 text-slate-600">
+            {row.createdAt || '—'}
+          </td>
+        );
+
+      case 'updatedAt':
+        return (
+          <td key={column} className="py-3 px-3 text-slate-600">
+            {row.updatedAt || '—'}
+          </td>
+        );
+
+      case 'confirmationCode':
+        return (
+          <td key={column} className="py-3 px-3 font-mono text-slate-600">
+            {row.confirmationCode || '—'}
+          </td>
+        );
+
+      case 'emailStatus':
+        return (
+          <td key={column} className="py-3 px-3 text-slate-600">
+            {row.emailStatus || '—'}
+          </td>
+        );
+
+      case 'emailMessageId':
+        return (
+          <td key={column} className="py-3 px-3 font-mono text-slate-600">
+            {row.emailMessageId || '—'}
+          </td>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   const handleExecuteConfirm = async () => {
     if (!confirmingDonation) {
       alert('DEBUG 2 — STOP: confirmingDonation is NULL');
@@ -276,43 +461,84 @@ export function GoogleSheetView({
   };
 
   const exportCsv = () => {
-    const headers = [
-      'Donation ID', 'Submitted At', 'Towards (Seva Head)', 'Donor Name', 'Email ID',
-      'Amount (INR)', 'Payment Mode', 'Payment Status', 'Reference', 'Receipt URL',
-      'Email Status', 'Email Message ID', 'Created At', 'Updated At',
-      'Confirmation Code', 'Confirmed By', 'Seva Category', 'Seva Head'
-    ];
-    
-    const rows = filteredDonations.map(d => [
-      d.donationId,
-      d.submittedAt,
-      `"${(d.sevaHead || d.sevaCategory || 'General Seva').replace(/"/g, '""')}"`,
-      `"${d.donorName.replace(/"/g, '""')}"`,
-      d.email,
-      d.amount,
-      d.paymentMode,
-      d.paymentStatus,
-      d.paymentReference,
-      d.receiptUrl,
-      d.emailStatus,
-      d.emailMessageId,
-      d.createdAt,
-      d.updatedAt,
-      d.confirmationCode,
-      `"${(d.volunteerName || '').replace(/"/g, '""')}"`,
-      `"${(d.sevaCategory || '').replace(/"/g, '""')}"`,
-      `"${(d.sevaHead || '').replace(/"/g, '""')}"`
-    ]);
+  const headers = [
+    'Donation ID',
+    'Submitted At',
+    'Towards (Seva Head)',
+    'Donor Name',
+    'Mobile No',
+    'Email ID',
+    'Amount (INR)',
+    'Payment Mode',
+    'Payment Status',
+    'Reference',
+    'Receipt URL',
+    'Email Status',
+    'Email Message ID',
+    'Created At',
+    'Updated At',
+    'Confirmation Code',
+    'Confirmed By',
+    'Volunteer Name',
+    'Seva Category',
+    'Seva Head'
+  ];
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `SHREE_JAGANNATH_SEVA_TRUST_DONATIONS_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  // Escape CSV values safely, including commas, quotes and line breaks.
+  const escapeCsv = (value: unknown): string =>
+    `"${String(value ?? '').replace(/"/g, '""')}"`;
+
+  const rows = filteredDonations.map(d => [
+    d.donationId,
+    d.submittedAt,
+    d.sevaHead || d.sevaCategory || 'General Seva',
+    d.donorName,
+    d.mobile || d.phone || '',
+    d.email,
+    d.amount,
+    d.paymentMode,
+    d.paymentStatus,
+    d.paymentReference,
+    d.receiptUrl,
+    d.emailStatus,
+    d.emailMessageId,
+    d.createdAt,
+    d.updatedAt,
+    d.confirmationCode,
+    d.confirmedBy,
+    d.volunteerName,
+    d.sevaCategory,
+    d.sevaHead
+  ]);
+
+  const csvContent = [
+    headers,
+    ...rows
+  ]
+    .map(row => row.map(escapeCsv).join(','))
+    .join('\r\n');
+
+  // Generate a UTF-8 CSV file compatible with Excel.
+  const blob = new Blob(
+    ['\uFEFF' + csvContent],
+    { type: 'text/csv;charset=utf-8;' }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  link.href = url;
+  link.download =
+    `SHREE_JAGANNATH_SEVA_TRUST_DONATIONS_${
+      new Date().toISOString().slice(0, 10)
+    }.csv`;
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
 
   return (
     <div className="space-y-6">
@@ -374,6 +600,77 @@ export function GoogleSheetView({
               <Download className="w-3.5 h-3.5" />
               <span>Export CSV</span>
             </button>
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowColumnMenu(open => !open)}
+                aria-expanded={showColumnMenu}
+                aria-label="Customize visible columns"
+                className="px-3 py-2 bg-white hover:bg-amber-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>Customize Columns</span>
+              </button>
+
+              {showColumnMenu && (
+                <div className="absolute right-0 top-full mt-2 z-50 w-[min(36rem,calc(100vw-2rem))] rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
+                  <div className="flex items-center justify-between gap-3 mb-1">
+                    <h3 className="text-sm font-black text-slate-900">
+                      Customize Columns
+                    </h3>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowColumnMenu(false)}
+                      className="text-xs font-bold text-slate-500 hover:text-slate-900 px-2 py-1 rounded-lg hover:bg-slate-100"
+                    >
+                      Close
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-slate-500 mb-3">
+                    Select the optional columns to display. Your choices are saved on this device.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    {OPTIONAL_COLUMNS.map(column => (
+                      <label
+                        key={column.key}
+                        className="flex items-start gap-2 rounded-lg px-2 py-2 text-xs text-slate-700 hover:bg-amber-50 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedOptionalColumns.includes(column.key)}
+                          onChange={event =>
+                            toggleOptionalColumn(column.key, event.target.checked)
+                          }
+                          className="mt-0.5 rounded border-slate-300 text-amber-700 focus:ring-amber-600"
+                        />
+
+                        <span>{column.label}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-slate-100 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedOptionalColumns(
+                          OPTIONAL_COLUMNS
+                            .filter(column => column.defaultVisible)
+                            .map(column => column.key) as OptionalColumnKey[]
+                        )
+                      }
+                      className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                    >
+                      Reset to defaults
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <a
               href={spreadsheetUrl || '#'}
@@ -517,7 +814,7 @@ export function GoogleSheetView({
                   <th className="py-3 px-3 text-right">Amount (₹)</th>
                   <th className="py-3 px-3">Payment Mode</th>
                   <th className="py-3 px-3">Status</th>
-                  <th className="py-3 px-3">Payment Reference</th>
+                  <th className="py-3 px-3">Donation Date</th>
                   <th className="py-3 px-3">Confirmed By</th>
                   <th className="py-3 px-3">Receipt</th>
                   <th className="py-3 px-3 text-center">Action</th>
@@ -595,9 +892,9 @@ export function GoogleSheetView({
                         </span>
                       </td>
 
-                      {/* Payment Reference */}
-                      <td className="py-3 px-3 font-mono text-slate-600 text-[11px]">
-                        {row.paymentReference || '—'}
+                      {/* Donation Date */}
+                      <td className="py-3 px-3 text-slate-600 text-[11px]">
+                        {row.createdAt || row.submittedAt || '—'}
                       </td>
 
                       {/* Confirmed By / Volunteer Name */}
