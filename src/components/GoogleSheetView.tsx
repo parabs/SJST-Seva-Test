@@ -19,14 +19,15 @@ import { useGmailAuth } from '../context/GmailAuthContext';
 import { loadAppConfig } from '../services/appConfig';
 
 const OPTIONAL_COLUMNS = [
-  { key: 'submittedAt', label: 'Submitted At', defaultVisible: false },
   { key: 'mobile', label: 'Mobile Number', defaultVisible: true },
   { key: 'email', label: 'Email', defaultVisible: true },
   { key: 'paymentMode', label: 'Payment Mode', defaultVisible: true },
-  { key: 'paymentReference', label: 'Payment Reference', defaultVisible: true },
+  { key: 'createdAt', label: 'Donation Date', defaultVisible: true },
   { key: 'confirmedBy', label: 'Confirmed By', defaultVisible: true },
+  { key: 'receipt', label: 'Receipt', defaultVisible: true },
+
+  { key: 'submittedAt', label: 'Submitted At', defaultVisible: false },
   { key: 'volunteerName', label: 'Volunteer Name', defaultVisible: false },
-  { key: 'createdAt', label: 'Created At', defaultVisible: false },
   { key: 'updatedAt', label: 'Updated At', defaultVisible: false },
   { key: 'confirmationCode', label: 'Confirmation Code', defaultVisible: false },
   { key: 'emailStatus', label: 'Email Status', defaultVisible: false },
@@ -359,12 +360,6 @@ const toggleOptionalColumn = (
           </td>
         );
 
-      case 'paymentReference':
-        return (
-          <td key={column} className="py-3 px-3 font-mono text-slate-600 text-[11px]">
-            {row.paymentReference || '—'}
-          </td>
-        );
 
       case 'confirmedBy':
         return (
@@ -808,15 +803,17 @@ const toggleOptionalColumn = (
               <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200 uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="py-3 px-3">Donation ID</th>
-                  <th className="py-3 px-3">Towards / Seva</th>
                   <th className="py-3 px-3">Donor Name</th>
-                  <th className="py-3 px-3">Email</th>
+                  <th className="py-3 px-3">Towards / Seva</th>
                   <th className="py-3 px-3 text-right">Amount (₹)</th>
-                  <th className="py-3 px-3">Payment Mode</th>
+
+                  {visibleOptionalColumns.map(column => (
+                    <th key={column.key} className="py-3 px-3">
+                      {column.label}
+                    </th>
+                  ))}
+
                   <th className="py-3 px-3">Status</th>
-                  <th className="py-3 px-3">Donation Date</th>
-                  <th className="py-3 px-3">Confirmed By</th>
-                  <th className="py-3 px-3">Receipt</th>
                   <th className="py-3 px-3 text-center">Action</th>
                 </tr>
               </thead>
