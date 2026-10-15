@@ -838,7 +838,7 @@ const toggleOptionalColumn = (
               <tbody className="divide-y divide-slate-200 font-normal">
                 {filteredDonations.length === 0 ? (
                   <tr>
-                    <<td colSpan={6 + visibleOptionalColumns.length} className="py-10 text-center text-slate-400 text-xs">
+                    <td colSpan={6 + visibleOptionalColumns.length} className="py-10 text-center text-slate-400 text-xs">
                       No donation records match the selected filters.
                     </td>
                   </tr>
