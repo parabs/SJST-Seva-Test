@@ -180,15 +180,8 @@ export async function loadAppConfig(): Promise<PublicAppConfig> {
 
   }
 
-
   const config =
     result.config as PublicAppConfig;
-
-    alert(
-  'CONFIG DEBUG\n' +
-  'Bootstrap URL: ' + CONFIG_BOOTSTRAP_URL + '\n' +
-  'Donation Backend URL: ' + (config.api?.backendUrl || 'MISSING')
-);
 
   /**
    * Validate the configured backend URL.

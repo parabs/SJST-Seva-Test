@@ -1051,7 +1051,7 @@ function App() {
           </div>
 
           <div className="text-sm font-semibold text-slate-100 font-serif">
-            Designed &amp; developed by <strong className="text-amber-400">Sachin Parab</strong>
+            Designed &amp; developed by <strong className="text-amber-400">Sachin Parab/Prasana Petro</strong>
           </div>
 
           <div className="text-sm font-bold text-amber-300 font-serif">

@@ -633,29 +633,23 @@ export function GoogleSheetView({
                       <td className="py-3 px-3 text-center">
 
                         {/* TRUSTEE / ADMIN → VIEW ONLY */}
+                        {/* CONFIRMATION PENDING → Confirm, Repayment, Cancel */}
                         {!isViewOnlyRole && row.paymentStatus === 'Confirmation Pending' && (
                           <div className="flex items-center justify-center gap-1.5">
-
                             <button
                               type="button"
                               onClick={() => setConfirmingDonation(row)}
-                              className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-[10px] font-bold inline-flex items-center gap-1 transition cursor-pointer"
+                              className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-[10px] font-bold"
                             >
-                              <Check className="w-3 h-3" />
-                              <span>Confirm</span>
+                              Confirm
                             </button>
 
                             <button
                               type="button"
-                              onClick={async () => {
-                                if (!onRepayment) {
-                                  alert('Repayment handler is not available.');
-                                  return;
-                                }
-
-                                await onRepayment(row);
-                              }}
-                              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[10px] font-bold transition cursor-pointer"
+                              onClick={() => onRepayment
+                                ? onRepayment(row)
+                                : alert('Repayment handler is not available.')}
+                              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[10px] font-bold"
                             >
                               Repayment
                             </button>
@@ -666,40 +660,134 @@ export function GoogleSheetView({
                                 if (onCancelDonation) {
                                   onCancelDonation(
                                     row.donationId,
-                                    row.volunteerName || 'Trust Volunteer'
+                                    currentVolunteer?.volunteerCode ||
+                                      currentVolunteer?.volunteerName ||
+                                      'Trust Volunteer'
                                   );
+                                } else {
+                                  alert('Cancellation handler is not available.');
                                 }
                               }}
-                              className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-bold transition cursor-pointer"
+                              className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-bold"
                             >
                               Cancel
                             </button>
-
                           </div>
                         )}
 
-                        {/* PAID → VIEW + SEND ONLY */}
+                        {/* PAID → Send Receipt, Repayment, Cancel */}
                         {!isViewOnlyRole && row.paymentStatus === 'Paid' && (
                           <div className="flex items-center justify-center gap-1.5">
-
                             {onSendReceipt && (
                               <button
                                 type="button"
-                                onClick={async () => {
-                                  await onSendReceipt(row);
-                                }}
-                                className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold transition cursor-pointer"
+                                onClick={() => onSendReceipt(row)}
+                                className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold"
                               >
                                 Send Receipt
                               </button>
                             )}
 
+                            <button
+                              type="button"
+                              onClick={() => onRepayment
+                                ? onRepayment(row)
+                                : alert('Repayment handler is not available.')}
+                              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[10px] font-bold"
+                            >
+                              Repayment
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (onCancelDonation) {
+                                  onCancelDonation(
+                                    row.donationId,
+                                    currentVolunteer?.volunteerCode ||
+                                      currentVolunteer?.volunteerName ||
+                                      'Trust Volunteer'
+                                  );
+                                } else {
+                                  alert('Cancellation handler is not available.');
+                                }
+                              }}
+                              className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-bold"
+                            >
+                              Cancel
+                            </button>
                           </div>
                         )}
 
-                        {/* CANCELLED → NO OPTIONS */}
+                        {/* REPAYMENT → Confirm, Send Receipt, Cancel */}
+                        {!isViewOnlyRole && row.paymentStatus === 'Repayment' && (
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (!onConfirmRepayment) {
+                                  alert('Repayment confirmation handler is not available.');
+                                  return;
+                                }
 
-                        {/* ALL OTHER STATUSES → NO OPTIONS */}
+                                try {
+                                  await onConfirmRepayment(row);
+                                } catch (error: any) {
+                                  alert(error?.message || 'Unable to confirm repayment.');
+                                }
+                              }}
+                              className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-[10px] font-bold"
+                            >
+                              Confirm
+                            </button>
+
+                            {onSendReceipt && (
+                              <button
+                                type="button"
+                                onClick={() => onSendReceipt(row)}
+                                className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold"
+                              >
+                                Send Receipt
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (onCancelDonation) {
+                                  onCancelDonation(
+                                    row.donationId,
+                                    currentVolunteer?.volunteerCode ||
+                                      currentVolunteer?.volunteerName ||
+                                      'Trust Volunteer'
+                                  );
+                                } else {
+                                  alert('Cancellation handler is not available.');
+                                }
+                              }}
+                              className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-bold"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        )}
+
+                        {/* CANCELLED → Repayment */}
+                        {!isViewOnlyRole && row.paymentStatus === 'Cancelled' && (
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => onRepayment
+                                ? onRepayment(row)
+                                : alert('Repayment handler is not available.')}
+                              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[10px] font-bold"
+                            >
+                              Repayment
+                            </button>
+                          </div>
+                        )}
+
+
 
                       </td>
                     </tr>
