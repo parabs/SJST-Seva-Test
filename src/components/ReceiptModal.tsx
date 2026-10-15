@@ -80,7 +80,10 @@ export function ReceiptModal({
   const amountWords = numberToWordsInr(currentDonation.amount);
 
   // Clean Receipt No Display
-  const receiptNoDisplay = currentDonation.donationId.split('-').pop() || currentDonation.donationId;
+  const receiptNoDisplay =
+    currentDonation.receiptNumber != null
+      ? String(currentDonation.receiptNumber)
+      : 'Pending';
 
   // Real Browser Print
   const handlePrint = () => {
@@ -980,7 +983,7 @@ const handleAutoSaveReceiptPdf = async (
                     <div className="text-[10.5px]">
                       <span className="text-slate-500">Receipt No: </span>
                       <strong className="font-mono text-amber-950 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                        SJST-{receiptNoDisplay}
+                        {receiptNoDisplay}
                       </strong>
                     </div>
                     <div className="text-[10.5px]">
