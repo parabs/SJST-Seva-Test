@@ -627,22 +627,6 @@ export async function syncDonationToGoogleSheet(
         }
       };
 
-      alert(
-  'WEBHOOK PAYLOAD DEBUG\n' +
-  'Action: ' + (webhookPayload.action || '') + '\n' +
-  'Record Mobile: ' + (webhookPayload.record?.mobile || '') + '\n' +
-  'Record Phone: ' + (webhookPayload.record?.phone || '') + '\n' +
-  'Webhook URL configured: ' + Boolean(webhookUrl)
-);
-
-alert(
-  'WEBHOOK PAYLOAD DEBUG\n' +
-  'Action: ' + (webhookPayload.action || '') + '\n' +
-  'Record Mobile: ' + (webhookPayload.record?.mobile || '') + '\n' +
-  'Record Phone: ' + (webhookPayload.record?.phone || '') + '\n' +
-  'Webhook URL configured: ' + Boolean(webhookUrl)
-);
-
       await fetch(webhookUrl, {
         method: 'POST',
         mode: 'no-cors', // Crucial: Bypasses browser CORS preflight check
@@ -1209,7 +1193,7 @@ export async function fetchDonationsFromGoogleSheet(
       }
     } else {
       // Standard Google Sheets API fetch when OAuth token is available
-      const range = formatA1Range(sheetName, 'A1:S');
+      const range = formatA1Range(sheetName, 'A1:T');
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(configuredSpreadsheetId)}/values/${encodeURIComponent(range)}`;
       const response = await fetch(url, {
         headers: {
@@ -1248,6 +1232,7 @@ export async function fetchDonationsFromGoogleSheet(
     const statusIdx = findCol(['payment status', 'status']);
     const refIdx = findCol(['payment reference', 'reference', 'ref']);
     const receiptIdx = findCol(['final receipt url', 'receipt', 'url']);
+    const receiptNumberIdx = findCol(['receipt number','receipt no','receipt #','receiptnumber']);
     const emailStatusIdx = findCol(['communication status', 'email status', 'whatsapp status']);
     const msgIdIdx = findCol(['message id', 'msg']);
     const createIdx = findCol(['created at', 'created']);
@@ -1278,6 +1263,18 @@ export async function fetchDonationsFromGoogleSheet(
 
       const paymentReference = (refIdx >= 0 && row[refIdx]) ? String(row[refIdx]).trim() : '';
       const receiptUrl = (receiptIdx >= 0 && row[receiptIdx]) ? String(row[receiptIdx]).trim() : '';
+      const rawReceiptNumber = receiptNumberIdx >= 0 ? row[receiptNumberIdx] : undefined;
+      const parsedReceiptNumber =
+        rawReceiptNumber !== undefined &&
+        String(rawReceiptNumber).trim() !== ''
+          ? Number(rawReceiptNumber)
+          : undefined;
+      const receiptNumber =
+        parsedReceiptNumber !== undefined &&
+        Number.isSafeInteger(parsedReceiptNumber) &&
+        parsedReceiptNumber > 0
+          ? parsedReceiptNumber
+          : undefined;
       const emailStatus = (emailStatusIdx >= 0 && String(row[emailStatusIdx]).toLowerCase().includes('sent')) ? 'Sent' : 'Pending';
       const emailMessageId = (msgIdIdx >= 0 && row[msgIdIdx]) ? String(row[msgIdIdx]).trim() : '';
       const createdAt = (createIdx >= 0 && row[createIdx]) ? String(row[createIdx]).trim() : submittedAt;
@@ -1318,6 +1315,7 @@ export async function fetchDonationsFromGoogleSheet(
         paymentStatus,
         paymentReference,
         receiptUrl,
+        receiptNumber,
         whatsappStatus: emailStatus === 'Sent' ? 'Sent' : 'Pending',
         whatsappMessageId: emailMessageId,
         emailStatus,
@@ -2171,6 +2169,7 @@ function parseRowsToDonations(allRows: any[][]): { success: boolean; donations: 
   const statusIdx = findCol(['payment status', 'status']);
   const refIdx = findCol(['payment reference', 'reference', 'ref']);
   const receiptIdx = findCol(['final receipt url', 'receipt', 'url']);
+  const receiptNumberIdx = findCol(['receipt number','receipt no', 'receipt #','receiptnumber']);
   const emailStatusIdx = findCol(['communication status', 'email status', 'whatsapp status']);
   const msgIdIdx = findCol(['message id', 'msg']);
   const createIdx = findCol(['created at', 'created']);
@@ -2190,6 +2189,18 @@ function parseRowsToDonations(allRows: any[][]): { success: boolean; donations: 
     const paymentStatus = (statusVal === 'paid' || statusVal === 'completed' || statusVal === 'confirmed') ? 'Paid' : 'Confirmation Pending';
     const paymentReference = (refIdx >= 0 && row[refIdx]) ? String(row[refIdx]).trim() : '';
     const receiptUrl = (receiptIdx >= 0 && row[receiptIdx]) ? String(row[receiptIdx]).trim() : '';
+    const rawReceiptNumber = receiptNumberIdx >= 0 ? row[receiptNumberIdx] : undefined;
+    const parsedReceiptNumber =
+      rawReceiptNumber !== undefined &&
+      String(rawReceiptNumber).trim() !== ''
+        ? Number(rawReceiptNumber)
+        : undefined;
+    const receiptNumber =
+      parsedReceiptNumber !== undefined &&
+      Number.isSafeInteger(parsedReceiptNumber) &&
+      parsedReceiptNumber > 0
+        ? parsedReceiptNumber
+        : undefined;
     const emailStatus = (emailStatusIdx >= 0 && String(row[emailStatusIdx]).toLowerCase().includes('sent')) ? 'Sent' : 'Pending';
     const emailMessageId = (msgIdIdx >= 0 && row[msgIdIdx]) ? String(row[msgIdIdx]).trim() : '';
     const createdAt = (createIdx >= 0 && row[createIdx]) ? String(row[createIdx]).trim() : submittedAt;
@@ -2215,6 +2226,7 @@ function parseRowsToDonations(allRows: any[][]): { success: boolean; donations: 
       paymentStatus,
       paymentReference,
       receiptUrl,
+      receiptNumber,
       whatsappStatus: emailStatus === 'Sent' ? 'Sent' : 'Pending',
       whatsappMessageId: emailMessageId,
       emailStatus,

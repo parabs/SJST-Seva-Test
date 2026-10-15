@@ -435,7 +435,6 @@ const toggleOptionalColumn = (
 
   const handleExecuteConfirm = async () => {
     if (!confirmingDonation) {
-      alert('DEBUG 2 — STOP: confirmingDonation is NULL');
       return;
     }
 

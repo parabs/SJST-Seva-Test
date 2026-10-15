@@ -10,6 +10,7 @@ export interface DonationRecord {
   paymentStatus: 'Paid' | 'Pending' | 'Confirmation Pending' | 'Cancelled'; // Payment Status
   paymentReference: string; // Payment Reference
   receiptUrl: string; // Final Receipt URL
+  receiptNumber?: number; // Col T: Sequential numeric receipt number
   whatsappStatus?: 'Pending' | 'Sent' | 'Not Required' | 'Failed'; // WhatsApp Status
   whatsappMessageId?: string; // WhatsApp Message ID
   emailStatus?: 'Pending' | 'Sent' | 'Not Required' | 'Failed'; // Email Status
