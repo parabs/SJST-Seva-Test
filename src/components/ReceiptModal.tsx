@@ -61,7 +61,6 @@ export function ReceiptModal({
   
   // Sync prop changes
   useEffect(() => {
-    alert('STEP 2: - Use effect 1');
     setCurrentDonation(initialDonation);
   }, [initialDonation]);
 
@@ -87,13 +86,10 @@ export function ReceiptModal({
         ? String(currentDonation.receiptNumber)
         : 'Pending';
 
-        
-    alert('STEP 3: -\n'+ receiptNoDisplay);
-
-  // Real Browser Print
-  const handlePrint = () => {
-    window.print();
-  };
+      // Real Browser Print
+      const handlePrint = () => {
+        window.print();
+      };
 
   // Direct Verification from Receipt Modal
   const handleConfirmInModal = async () => {
