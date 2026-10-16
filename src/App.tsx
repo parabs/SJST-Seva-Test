@@ -562,8 +562,8 @@ function App() {
       sevaHead: formData.sevaHead
     };
 
- // Official receipt and email are now handled by Google Apps Script.
-// Do not generate/upload/send anything from the frontend.
+    // Official receipt and email are now handled by Google Apps Script.
+    // Do not generate/upload/send anything from the frontend.
 
     setDonations(prev => [newRecord, ...prev]);
 
