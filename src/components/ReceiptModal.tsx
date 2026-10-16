@@ -172,45 +172,75 @@ export function ReceiptModal({
     }
   };
 
-const uploadReceiptPdfToBackend = async (
-  pdf: jsPDF,
-  fileName: string,
-  donationId: string
-) => {
+  const uploadReceiptPdfToBackend = async (
+    pdf: jsPDF,
+    fileName: string,
+    donationId: string
+  ) => {
 
-  const pdfDataUri = pdf.output('datauristring');
+    const pdfDataUri = pdf.output('datauristring');
 
-  const base64 = pdfDataUri.split(',')[1];
+    const base64 = pdfDataUri.split(',')[1];
 
-  const response = await fetch(
-    getConfiguredBackendUrl(),
-    {
+    const response = await fetch(
+      getConfiguredBackendUrl(),
+      {
+        method: 'POST',
+
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8'
+        },
+
+        body: JSON.stringify({
+          action: 'save_client_receipt_pdf',
+          donationId,
+          fileName,
+          pdfBase64: base64
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(
+        result.error ||
+        'Unable to save receipt PDF to Google Drive.'
+      );
+    }
+
+    return result;
+  };
+
+  const fetchReceiptNumber = async (
+    donationId: string
+  ): Promise<number | string> => {
+    const response = await fetch(getConfiguredBackendUrl(), {
       method: 'POST',
-
       headers: {
         'Content-Type': 'text/plain;charset=utf-8'
       },
-
       body: JSON.stringify({
-        action: 'save_client_receipt_pdf',
-        donationId,
-        fileName,
-        pdfBase64: base64
+        action: 'get_receipt_number',
+        donationId
       })
+    });
+
+    const result = await response.json();
+
+    if (!result.success || result.receiptNumber == null) {
+      throw new Error(
+        result.error || 'Receipt number was not returned by the backend.'
+      );
     }
-  );
 
-  const result = await response.json();
-
-  if (!result.success) {
-    throw new Error(
-      result.error ||
-      'Unable to save receipt PDF to Google Drive.'
+    alert(
+      'RECEIPT NUMBER RECEIVED:\n' +
+      'Donation ID: ' + donationId + '\n' +
+      'Receipt Number: ' + result.receiptNumber
     );
-  }
-
-  return result;
-};
+    return result.receiptNumber;
+  };
 
   const waitForReceiptAssets = async (
     element: HTMLElement
