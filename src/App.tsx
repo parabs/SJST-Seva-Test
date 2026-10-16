@@ -501,10 +501,6 @@ function App() {
     }
 
     const result = await response.json();
-    alert(
-  'RECEIPT LOOKUP RESPONSE:\n' +
-  JSON.stringify(result, null, 2)
-);
     if (
       !result.success ||
       result.receiptNumber == null ||
@@ -537,7 +533,7 @@ function App() {
     const volunteerName = formData.volunteerName;
     const paymentStatus = 'Paid';
     const paymentReference = formData.paymentMode === 'Cash' ? 'CASH-COUNTER-DIRECT' : 'UPI-COUNTER-DIRECT';
-
+    alert('step1: handleVolunteerDirectDonation')
 
     const newRecord: DonationRecord = {
       donationId,

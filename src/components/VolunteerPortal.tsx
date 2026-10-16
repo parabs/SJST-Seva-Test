@@ -421,7 +421,7 @@ React.useEffect(() => {
         });
 
         setDirectSuccessDonation(record);
-
+      
         // ---------------------------------------------------------
         // STANDARD RECEIPT WORKFLOW
         // Direct donations are already Paid and therefore do not
