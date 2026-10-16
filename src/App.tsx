@@ -494,9 +494,7 @@ function App() {
     const volunteerName = formData.volunteerName;
     const paymentStatus = 'Paid';
     const paymentReference = formData.paymentMode === 'Cash' ? 'CASH-COUNTER-DIRECT' : 'UPI-COUNTER-DIRECT';
-    let driveReceiptUrl = `https://drive.google.com/file/d/receipt-${donationId}/view`;
-    let emailStatus: 'Pending' | 'Sent' | 'Not Required' | 'Failed' = formData.email ? 'Pending' : 'Not Required';
-    let emailMessageId = '';
+
 
     const newRecord: DonationRecord = {
       donationId,
@@ -527,18 +525,35 @@ function App() {
     setDonations(prev => [newRecord, ...prev]);
 
     try {
-      await googleSheetsService.syncDonationToGoogleSheet(
+      const syncResult = await googleSheetsService.syncDonationToGoogleSheet(
         newRecord,
         googleAccessToken,
         undefined,
         { directVolunteerEntry: true }
       );
-    } catch (err) {
-      console.error(
-        'VOLUNTEER SHEET SYNC ERROR:',
-        err
+
+      if (!syncResult.success) {
+        throw new Error(
+          syncResult.error || 'Failed to sync donation to Google Sheets.'
+        );
+      }
+
+      const receiptNumber = await fetchReceiptNumber(donationId);
+
+      const recordWithReceipt: DonationRecord = {
+        ...newRecord,
+        receiptNumber,
+      };
+
+      setDonations(prev =>
+        prev.map(d =>
+          d.donationId === donationId ? recordWithReceipt : d
+        )
       );
 
+      return recordWithReceipt;
+    } catch (err) {
+      console.error('VOLUNTEER SHEET SYNC / RECEIPT ERROR:', err);
       throw err;
     }
 

@@ -43,7 +43,6 @@ export function ReceiptModal({
   onClose,
   onVerifyDonation 
 }: ReceiptModalProps) {
-  alert('STEP 1: fetchReceiptNumber STARTED');
   const [currentDonation, setCurrentDonation] = useState<DonationRecord>(initialDonation);
   const receiptRef = useRef<HTMLDivElement>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -138,10 +137,7 @@ export function ReceiptModal({
         );
 
       }
-alert(
-  'STEP 4: Response parsed\n' +
-  JSON.stringify(result)
-);
+
 
     } catch (e: any) {
 
@@ -154,10 +150,7 @@ alert(
       setIsConfirmingInModal(false);
 
     }
-alert(
-  'STEP 5: exit\n' +
-  JSON.stringify(result)
-);
+
 
   };
 
@@ -242,13 +235,7 @@ alert(
         result.error || 'Receipt number was not returned by the backend.'
       );
     }
-
-    alert(
-      'RECEIPT NUMBER RECEIVED:\n' +
-      'Donation ID: ' + donationId + '\n' +
-      'Receipt Number: ' + result.receiptNumber
-    );
-    return result.receiptNumber;
+    return Number(result.receiptNumber);
   };
 
   const waitForReceiptAssets = async (
@@ -664,17 +651,6 @@ const handleAutoSaveReceiptPdf = async (
     ...currentDonation
   };
 
-  alert(
-    'RECEIPT NUMBER DEBUG\n\n' +
-    'Donation ID: ' + donationSnapshot.donationId + '\n' +
-    'Payment Status: ' + donationSnapshot.paymentStatus + '\n' +
-    'Receipt Number Received: ' +
-    (
-      donationSnapshot.receiptNumber != null
-        ? String(donationSnapshot.receiptNumber)
-        : 'NOT RECEIVED'
-    )
-  );
 
   // ---------------------------------------------------------
   // Capture the currently rendered receipt immediately.

@@ -594,7 +594,7 @@ export async function syncDonationToGoogleSheet(
 
   let webhookSuccess = false;
 
-// 1. Google Apps Script Webhook Dispatch
+  // 1. Google Apps Script Webhook Dispatch
   if (webhookUrl && webhookUrl.startsWith('https://script.google.com/')) {
     try {
       const webhookPayload = {
