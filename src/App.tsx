@@ -476,6 +476,46 @@ function App() {
     return newRecord;
   };
 
+  const fetchReceiptNumber = async (
+    donationId: string
+  ): Promise<number> => {
+    const response = await fetch(
+      await getConfiguredBackendUrl(),
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify({
+          action: 'get_receipt_number',
+          donationId
+        }),
+        redirect: 'follow'
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Receipt lookup failed: HTTP ${response.status}`
+      );
+    }
+
+    const result = await response.json();
+
+    if (
+      !result.success ||
+      result.receiptNumber == null ||
+      !Number.isFinite(Number(result.receiptNumber))
+    ) {
+      throw new Error(
+        result.error ||
+        'Receipt number was not returned by the backend.'
+      );
+    }
+
+    return Number(result.receiptNumber);
+  };
+
   const handleVolunteerDirectDonation = async (formData: {
     donorName: string;
     email: string;
