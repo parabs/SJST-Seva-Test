@@ -501,15 +501,18 @@ function App() {
     }
 
     const result = await response.json();
-
+    alert(
+  'RECEIPT LOOKUP RESPONSE:\n' +
+  JSON.stringify(result, null, 2)
+);
     if (
       !result.success ||
       result.receiptNumber == null ||
       !Number.isFinite(Number(result.receiptNumber))
     ) {
       throw new Error(
-        result.error ||
-        'Receipt number was not returned by the backend.'
+        'Receipt lookup response: ' +
+        JSON.stringify(result)
       );
     }
 
