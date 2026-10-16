@@ -43,6 +43,7 @@ export function ReceiptModal({
   onClose,
   onVerifyDonation 
 }: ReceiptModalProps) {
+  alert('STEP 1: fetchReceiptNumber STARTED');
   const [currentDonation, setCurrentDonation] = useState<DonationRecord>(initialDonation);
   const receiptRef = useRef<HTMLDivElement>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -60,6 +61,7 @@ export function ReceiptModal({
   
   // Sync prop changes
   useEffect(() => {
+    alert('STEP 2: - Use effect 1');
     setCurrentDonation(initialDonation);
   }, [initialDonation]);
 
@@ -84,6 +86,9 @@ export function ReceiptModal({
       currentDonation.receiptNumber != null
         ? String(currentDonation.receiptNumber)
         : 'Pending';
+
+        
+    alert('STEP 3: -\n'+ receiptNoDisplay);
 
   // Real Browser Print
   const handlePrint = () => {
@@ -137,6 +142,10 @@ export function ReceiptModal({
         );
 
       }
+alert(
+  'STEP 4: Response parsed\n' +
+  JSON.stringify(result)
+);
 
     } catch (e: any) {
 
@@ -149,6 +158,10 @@ export function ReceiptModal({
       setIsConfirmingInModal(false);
 
     }
+alert(
+  'STEP 5: exit\n' +
+  JSON.stringify(result)
+);
 
   };
 
