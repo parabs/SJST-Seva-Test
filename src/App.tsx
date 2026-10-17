@@ -476,45 +476,6 @@ function App() {
     return newRecord;
   };
 
-  const fetchReceiptNumber = async (
-    donationId: string
-  ): Promise<number> => {
-    const response = await fetch(
-      await getConfiguredBackendUrl(),
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8'
-        },
-        body: JSON.stringify({
-          action: 'get_receipt_number',
-          donationId
-        }),
-        redirect: 'follow'
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        `Receipt lookup failed: HTTP ${response.status}`
-      );
-    }
-
-    const result = await response.json();
-    if (
-      !result.success ||
-      result.receiptNumber == null ||
-      !Number.isFinite(Number(result.receiptNumber))
-    ) {
-      throw new Error(
-        'Receipt lookup response: ' +
-        JSON.stringify(result)
-      );
-    }
-
-    return Number(result.receiptNumber);
-  };
-
   const handleVolunteerDirectDonation = async (formData: {
     donorName: string;
     email: string;
@@ -533,7 +494,10 @@ function App() {
     const volunteerName = formData.volunteerName;
     const paymentStatus = 'Paid';
     const paymentReference = formData.paymentMode === 'Cash' ? 'CASH-COUNTER-DIRECT' : 'UPI-COUNTER-DIRECT';
-    
+    let driveReceiptUrl = `https://drive.google.com/file/d/receipt-${donationId}/view`;
+    let emailStatus: 'Pending' | 'Sent' | 'Not Required' | 'Failed' = formData.email ? 'Pending' : 'Not Required';
+    let emailMessageId = '';
+
     const newRecord: DonationRecord = {
       donationId,
       submittedAt: new Date().toISOString(),
@@ -546,8 +510,8 @@ function App() {
       paymentStatus,
       paymentReference,
       receiptUrl: '',
-      emailStatus: formData.email ? 'Pending' : 'Not Required',
-      emailMessageId: '',
+      emailStatus,
+      emailMessageId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       confirmationCode,
@@ -557,42 +521,24 @@ function App() {
       sevaHead: formData.sevaHead
     };
 
-    // Official receipt and email are now handled by Google Apps Script.
-    // Do not generate/upload/send anything from the frontend.
+ // Official receipt and email are now handled by Google Apps Script.
+// Do not generate/upload/send anything from the frontend.
 
     setDonations(prev => [newRecord, ...prev]);
-alert('step1: handleVolunteerDirectDonation')
 
     try {
-      const syncResult = await googleSheetsService.syncDonationToGoogleSheet(
+      await googleSheetsService.syncDonationToGoogleSheet(
         newRecord,
         googleAccessToken,
         undefined,
         { directVolunteerEntry: true }
       );
-
-      if (!syncResult.success) {
-        throw new Error(
-          syncResult.error || 'Failed to sync donation to Google Sheets.'
-        );
-      }
-
-      const receiptNumber = await fetchReceiptNumber(donationId);
-
-      const recordWithReceipt: DonationRecord = {
-        ...newRecord,
-        receiptNumber,
-      };
-
-      setDonations(prev =>
-        prev.map(d =>
-          d.donationId === donationId ? recordWithReceipt : d
-        )
+    } catch (err) {
+      console.error(
+        'VOLUNTEER SHEET SYNC ERROR:',
+        err
       );
 
-      return recordWithReceipt;
-    } catch (err) {
-      console.error('VOLUNTEER SHEET SYNC / RECEIPT ERROR:', err);
       throw err;
     }
 
@@ -1098,24 +1044,22 @@ alert('step1: handleVolunteerDirectDonation')
 
       <footer className="mt-auto bg-slate-900 text-slate-300 border-t border-slate-800 py-5 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center space-y-1.5">
-
-
-          <div className="text-[10px] sm:text-xs font-semibold text-amber-300">
-            💡 Digital Solutions:{' '}
-            <a
-              href="tel:+919892805337"
-              className="hover:underline whitespace-nowrap"
-            >
-              Sachin Parab 9892805337
-            </a>
-            <span className="mx-1 text-slate-500">|</span>
-            <a
-              href="tel:+919820343384"
-              className="hover:underline whitespace-nowrap"
-            >
-              Prasana Petro 98203 43384
-            </a>
-          </div>
+            <div className="text-[10px] sm:text-xs font-semibold text-amber-300">
+              💡 Digital Solutions:{' '}
+              <a
+                href="tel:+919892805337"
+                className="hover:underline whitespace-nowrap"
+              >
+                Sachin Parab 9892805337
+              </a>
+              <span className="mx-1 text-slate-500">|</span>
+              <a
+                href="tel:+919820343384"
+                className="hover:underline whitespace-nowrap"
+              >
+                Prasana Petro 98203 43384
+              </a>
+            </div>
 
           <div className="pt-2 text-[10px] text-slate-500">
             © {new Date().getFullYear()} Shree Jagannath Seva Trust, Thane • Autonomous Live Integration

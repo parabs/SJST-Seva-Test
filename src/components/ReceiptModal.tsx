@@ -79,16 +79,13 @@ export function ReceiptModal({
 
   const amountWords = numberToWordsInr(currentDonation.amount);
 
-    // Clean Receipt No Display
-    const receiptNoDisplay =
-      currentDonation.receiptNumber != null
-        ? String(currentDonation.receiptNumber)
-        : 'Pending';
+  // Clean Receipt No Display
+  const receiptNoDisplay = currentDonation.donationId.split('-').pop() || currentDonation.donationId;
 
-      // Real Browser Print
-      const handlePrint = () => {
-        window.print();
-      };
+  // Real Browser Print
+  const handlePrint = () => {
+    window.print();
+  };
 
   // Direct Verification from Receipt Modal
   const handleConfirmInModal = async () => {
@@ -138,7 +135,6 @@ export function ReceiptModal({
 
       }
 
-
     } catch (e: any) {
 
       setConfirmErrorMsg(
@@ -150,7 +146,6 @@ export function ReceiptModal({
       setIsConfirmingInModal(false);
 
     }
-
 
   };
 
@@ -174,69 +169,45 @@ export function ReceiptModal({
     }
   };
 
-  const uploadReceiptPdfToBackend = async (
-    pdf: jsPDF,
-    fileName: string,
-    donationId: string
-  ) => {
+const uploadReceiptPdfToBackend = async (
+  pdf: jsPDF,
+  fileName: string,
+  donationId: string
+) => {
 
-    const pdfDataUri = pdf.output('datauristring');
+  const pdfDataUri = pdf.output('datauristring');
 
-    const base64 = pdfDataUri.split(',')[1];
+  const base64 = pdfDataUri.split(',')[1];
 
-    const response = await fetch(
-      getConfiguredBackendUrl(),
-      {
-        method: 'POST',
-
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8'
-        },
-
-        body: JSON.stringify({
-          action: 'save_client_receipt_pdf',
-          donationId,
-          fileName,
-          pdfBase64: base64
-        })
-      }
-    );
-
-    const result = await response.json();
-
-    if (!result.success) {
-      throw new Error(
-        result.error ||
-        'Unable to save receipt PDF to Google Drive.'
-      );
-    }
-
-    return result;
-  };
-
-  const fetchReceiptNumber = async (
-    donationId: string
-  ): Promise<number | string> => {
-    const response = await fetch(getConfiguredBackendUrl(), {
+  const response = await fetch(
+    getConfiguredBackendUrl(),
+    {
       method: 'POST',
+
       headers: {
         'Content-Type': 'text/plain;charset=utf-8'
       },
+
       body: JSON.stringify({
-        action: 'get_receipt_number',
-        donationId
+        action: 'save_client_receipt_pdf',
+        donationId,
+        fileName,
+        pdfBase64: base64
       })
-    });
-
-    const result = await response.json();
-
-    if (!result.success || result.receiptNumber == null) {
-      throw new Error(
-        result.error || 'Receipt number was not returned by the backend.'
-      );
     }
-    return Number(result.receiptNumber);
-  };
+  );
+
+  const result = await response.json();
+
+  if (!result.success) {
+    throw new Error(
+      result.error ||
+      'Unable to save receipt PDF to Google Drive.'
+    );
+  }
+
+  return result;
+};
 
   const waitForReceiptAssets = async (
     element: HTMLElement
@@ -651,7 +622,6 @@ const handleAutoSaveReceiptPdf = async (
     ...currentDonation
   };
 
-
   // ---------------------------------------------------------
   // Capture the currently rendered receipt immediately.
   // ---------------------------------------------------------
@@ -1010,7 +980,7 @@ const handleAutoSaveReceiptPdf = async (
                     <div className="text-[10.5px]">
                       <span className="text-slate-500">Receipt No: </span>
                       <strong className="font-mono text-amber-950 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                        {receiptNoDisplay}
+                        SJST-{receiptNoDisplay}
                       </strong>
                     </div>
                     <div className="text-[10.5px]">
@@ -1204,7 +1174,6 @@ const handleAutoSaveReceiptPdf = async (
                 <span>Verify &amp; Finalize</span>
               </button>
             )}
-
             <button
               onClick={onClose}
               className="px-3.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"

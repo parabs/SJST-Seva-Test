@@ -561,31 +561,15 @@ export async function syncDonationToGoogleSheet(
   const isDirectVolunteerEntry =
     options?.directVolunteerEntry === true;
 
-  alert('[TRACE C] Direct entry flag\n' +
-    'Direct volunteer entry: ' + isDirectVolunteerEntry
-  );
-
-  alert('[TRACE D] About to call getBackendUrl');
-
   const configuredBackendUrl =
     await getBackendUrl();
-  
-  alert('[TRACE E] getBackendUrl completed\n' +
-    'URL returned: ' + Boolean(configuredBackendUrl)
-  );
 
-  const webhookUrl = configuredBackendUrl;
+  const webhookUrl =
+    configuredBackendUrl;
 
   const spreadsheetId =
     await getConfiguredSpreadsheetId();
-  alert('[TRACE F] Spreadsheet ID lookup completed');
   const sheetName = 'Donations'
-
-  
-  alert('[TRACE A] Configuration loaded\n' +
-    'Backend URL: ' + String(webhookUrl) + '\n' +
-    'Spreadsheet ID present: ' + Boolean(spreadsheetId)
-  );
 
   // Resolve token from parameter, sessionStorage, or localStorage
   const effectiveToken = (
@@ -593,21 +577,6 @@ export async function syncDonationToGoogleSheet(
     (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('sjst_gmail_access_token') : null) || 
     (typeof localStorage !== 'undefined' ? localStorage.getItem('sjst_gmail_access_token') : null)
   )?.trim() || null;
-
-  alert('[TRACE B] Token resolved\n' +
-    'Google token present: ' + Boolean(effectiveToken) + '\n' +
-    'Backend URL valid: ' +
-      Boolean(webhookUrl && webhookUrl.startsWith('https://script.google.com/'))
-  );
-
-  alert('[TRACE G] Webhook condition\n' +
-    'URL starts with script.google.com: ' +
-    String(Boolean(
-      webhookUrl &&
-      webhookUrl.startsWith('https://script.google.com/')
-    )) + '\n' +
-    'Direct entry: ' + String(isDirectVolunteerEntry)
-  );
 
   const isPaid = donation.paymentStatus === 'Paid';
   const isFormResponses = sheetName.toLowerCase().includes('form');
@@ -624,11 +593,10 @@ export async function syncDonationToGoogleSheet(
   }) : new Date().toLocaleString('en-IN');
 
   let webhookSuccess = false;
-alert('[TRACE 2-A] Sync service if condition');
-  // 1. Google Apps Script Webhook Dispatch
+
+// 1. Google Apps Script Webhook Dispatch
   if (webhookUrl && webhookUrl.startsWith('https://script.google.com/')) {
     try {
-      alert('[TRACE 2-B] Sync service entered if condition');
       const webhookPayload = {
         action: isDirectVolunteerEntry
           ? 'sync_donation'
@@ -659,12 +627,6 @@ alert('[TRACE 2-A] Sync service if condition');
         }
       };
 
-      alert('[TRACE 2] Sync service reached\n' +
-        'Action: sync_donation\n' +
-        'Donation ID: ' + donation.donationId + '\n' +
-        'Direct Volunteer: ' + isDirectVolunteerEntry
-      );
-      alert('[TRACE 2C] Sync service reached');
       await fetch(webhookUrl, {
         method: 'POST',
         mode: 'no-cors', // Crucial: Bypasses browser CORS preflight check
@@ -675,11 +637,6 @@ alert('[TRACE 2-A] Sync service if condition');
       });
      webhookSuccess = true;
     } catch (whErr: any) {
-      alert(
-        '[TRACE ERROR] Webhook dispatch failed\n' +
-        'Error: ' + String(whErr?.message || whErr) + '\n' +
-        'Stack: ' + String(whErr?.stack || 'Not available')
-      );
       console.warn('Google Apps Script Webhook dispatch notice:', whErr);
     }
   }
@@ -1236,7 +1193,7 @@ export async function fetchDonationsFromGoogleSheet(
       }
     } else {
       // Standard Google Sheets API fetch when OAuth token is available
-      const range = formatA1Range(sheetName, 'A1:T');
+      const range = formatA1Range(sheetName, 'A1:S');
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(configuredSpreadsheetId)}/values/${encodeURIComponent(range)}`;
       const response = await fetch(url, {
         headers: {
@@ -1275,7 +1232,6 @@ export async function fetchDonationsFromGoogleSheet(
     const statusIdx = findCol(['payment status', 'status']);
     const refIdx = findCol(['payment reference', 'reference', 'ref']);
     const receiptIdx = findCol(['final receipt url', 'receipt', 'url']);
-    const receiptNumberIdx = findCol(['receipt number','receipt no','receipt #','receiptnumber']);
     const emailStatusIdx = findCol(['communication status', 'email status', 'whatsapp status']);
     const msgIdIdx = findCol(['message id', 'msg']);
     const createIdx = findCol(['created at', 'created']);
@@ -1306,18 +1262,6 @@ export async function fetchDonationsFromGoogleSheet(
 
       const paymentReference = (refIdx >= 0 && row[refIdx]) ? String(row[refIdx]).trim() : '';
       const receiptUrl = (receiptIdx >= 0 && row[receiptIdx]) ? String(row[receiptIdx]).trim() : '';
-      const rawReceiptNumber = receiptNumberIdx >= 0 ? row[receiptNumberIdx] : undefined;
-      const parsedReceiptNumber =
-        rawReceiptNumber !== undefined &&
-        String(rawReceiptNumber).trim() !== ''
-          ? Number(rawReceiptNumber)
-          : undefined;
-      const receiptNumber =
-        parsedReceiptNumber !== undefined &&
-        Number.isSafeInteger(parsedReceiptNumber) &&
-        parsedReceiptNumber > 0
-          ? parsedReceiptNumber
-          : undefined;
       const emailStatus = (emailStatusIdx >= 0 && String(row[emailStatusIdx]).toLowerCase().includes('sent')) ? 'Sent' : 'Pending';
       const emailMessageId = (msgIdIdx >= 0 && row[msgIdIdx]) ? String(row[msgIdIdx]).trim() : '';
       const createdAt = (createIdx >= 0 && row[createIdx]) ? String(row[createIdx]).trim() : submittedAt;
@@ -1358,7 +1302,6 @@ export async function fetchDonationsFromGoogleSheet(
         paymentStatus,
         paymentReference,
         receiptUrl,
-        receiptNumber,
         whatsappStatus: emailStatus === 'Sent' ? 'Sent' : 'Pending',
         whatsappMessageId: emailMessageId,
         emailStatus,
@@ -2212,7 +2155,6 @@ function parseRowsToDonations(allRows: any[][]): { success: boolean; donations: 
   const statusIdx = findCol(['payment status', 'status']);
   const refIdx = findCol(['payment reference', 'reference', 'ref']);
   const receiptIdx = findCol(['final receipt url', 'receipt', 'url']);
-  const receiptNumberIdx = findCol(['receipt number','receipt no', 'receipt #','receiptnumber']);
   const emailStatusIdx = findCol(['communication status', 'email status', 'whatsapp status']);
   const msgIdIdx = findCol(['message id', 'msg']);
   const createIdx = findCol(['created at', 'created']);
@@ -2232,18 +2174,6 @@ function parseRowsToDonations(allRows: any[][]): { success: boolean; donations: 
     const paymentStatus = (statusVal === 'paid' || statusVal === 'completed' || statusVal === 'confirmed') ? 'Paid' : 'Confirmation Pending';
     const paymentReference = (refIdx >= 0 && row[refIdx]) ? String(row[refIdx]).trim() : '';
     const receiptUrl = (receiptIdx >= 0 && row[receiptIdx]) ? String(row[receiptIdx]).trim() : '';
-    const rawReceiptNumber = receiptNumberIdx >= 0 ? row[receiptNumberIdx] : undefined;
-    const parsedReceiptNumber =
-      rawReceiptNumber !== undefined &&
-      String(rawReceiptNumber).trim() !== ''
-        ? Number(rawReceiptNumber)
-        : undefined;
-    const receiptNumber =
-      parsedReceiptNumber !== undefined &&
-      Number.isSafeInteger(parsedReceiptNumber) &&
-      parsedReceiptNumber > 0
-        ? parsedReceiptNumber
-        : undefined;
     const emailStatus = (emailStatusIdx >= 0 && String(row[emailStatusIdx]).toLowerCase().includes('sent')) ? 'Sent' : 'Pending';
     const emailMessageId = (msgIdIdx >= 0 && row[msgIdIdx]) ? String(row[msgIdIdx]).trim() : '';
     const createdAt = (createIdx >= 0 && row[createIdx]) ? String(row[createIdx]).trim() : submittedAt;
@@ -2269,7 +2199,6 @@ function parseRowsToDonations(allRows: any[][]): { success: boolean; donations: 
       paymentStatus,
       paymentReference,
       receiptUrl,
-      receiptNumber,
       whatsappStatus: emailStatus === 'Sent' ? 'Sent' : 'Pending',
       whatsappMessageId: emailMessageId,
       emailStatus,
@@ -2395,5 +2324,3 @@ export async function testAppendRowToGoogleSheet(
     };
   }
 }
-
-
