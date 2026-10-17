@@ -565,8 +565,14 @@ export async function syncDonationToGoogleSheet(
     'Direct volunteer entry: ' + isDirectVolunteerEntry
   );
 
+  alert('[TRACE D] About to call getBackendUrl');
+
   const configuredBackendUrl =
     await getBackendUrl();
+  
+  alert('[TRACE E] getBackendUrl completed\n' +
+    'URL returned: ' + Boolean(configuredBackendUrl)
+  );
 
   const webhookUrl = configuredBackendUrl;
 
