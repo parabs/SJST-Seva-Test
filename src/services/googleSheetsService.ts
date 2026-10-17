@@ -578,6 +578,7 @@ export async function syncDonationToGoogleSheet(
 
   const spreadsheetId =
     await getConfiguredSpreadsheetId();
+  alert('[TRACE F] Spreadsheet ID lookup completed');
   const sheetName = 'Donations'
 
   
@@ -597,6 +598,15 @@ export async function syncDonationToGoogleSheet(
     'Google token present: ' + Boolean(effectiveToken) + '\n' +
     'Backend URL valid: ' +
       Boolean(webhookUrl && webhookUrl.startsWith('https://script.google.com/'))
+  );
+
+  alert('[TRACE G] Webhook condition\n' +
+    'URL starts with script.google.com: ' +
+    String(Boolean(
+      webhookUrl &&
+      webhookUrl.startsWith('https://script.google.com/')
+    )) + '\n' +
+    'Direct entry: ' + String(isDirectVolunteerEntry)
   );
 
   const isPaid = donation.paymentStatus === 'Paid';
@@ -648,8 +658,7 @@ export async function syncDonationToGoogleSheet(
         }
       };
 
-      alert(
-        '[TRACE 2] Sync service reached\n' +
+      alert('[TRACE 2] Sync service reached\n' +
         'Action: sync_donation\n' +
         'Donation ID: ' + donation.donationId + '\n' +
         'Direct Volunteer: ' + directVolunteerEntry
