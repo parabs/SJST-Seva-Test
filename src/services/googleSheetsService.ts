@@ -564,13 +564,19 @@ export async function syncDonationToGoogleSheet(
   const configuredBackendUrl =
     await getBackendUrl();
 
-  const webhookUrl =
-    configuredBackendUrl;
+  const webhookUrl = configuredBackendUrl;
 
   const spreadsheetId =
     await getConfiguredSpreadsheetId();
   const sheetName = 'Donations'
 
+  
+  alert(
+    '[TRACE A] Configuration loaded\n' +
+    'Backend URL: ' + String(webhookUrl) + '\n' +
+    'Spreadsheet ID present: ' + Boolean(spreadsheetId)
+  );
+  
   // Resolve token from parameter, sessionStorage, or localStorage
   const effectiveToken = (
     accessToken || 
