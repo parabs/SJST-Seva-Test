@@ -561,6 +561,10 @@ export async function syncDonationToGoogleSheet(
   const isDirectVolunteerEntry =
     options?.directVolunteerEntry === true;
 
+  alert('[TRACE C] Direct entry flag\n' +
+    'Direct volunteer entry: ' + isDirectVolunteerEntry
+  );
+
   const configuredBackendUrl =
     await getBackendUrl();
 
