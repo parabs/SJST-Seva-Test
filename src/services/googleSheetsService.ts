@@ -662,7 +662,7 @@ alert('[TRACE 2-A] Sync service if condition');
       alert('[TRACE 2] Sync service reached\n' +
         'Action: sync_donation\n' +
         'Donation ID: ' + donation.donationId + '\n' +
-        'Direct Volunteer: ' + directVolunteerEntry
+        'Direct Volunteer: ' + isDirectVolunteerEntry
       );
       alert('[TRACE 2C] Sync service reached');
       await fetch(webhookUrl, {
