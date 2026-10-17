@@ -624,10 +624,11 @@ export async function syncDonationToGoogleSheet(
   }) : new Date().toLocaleString('en-IN');
 
   let webhookSuccess = false;
-
+alert('[TRACE 2-A] Sync service if condition');
   // 1. Google Apps Script Webhook Dispatch
   if (webhookUrl && webhookUrl.startsWith('https://script.google.com/')) {
     try {
+      alert('[TRACE 2-B] Sync service entered if condition');
       const webhookPayload = {
         action: isDirectVolunteerEntry
           ? 'sync_donation'
@@ -663,6 +664,7 @@ export async function syncDonationToGoogleSheet(
         'Donation ID: ' + donation.donationId + '\n' +
         'Direct Volunteer: ' + directVolunteerEntry
       );
+      alert('[TRACE 2C] Sync service reached');
       await fetch(webhookUrl, {
         method: 'POST',
         mode: 'no-cors', // Crucial: Bypasses browser CORS preflight check
