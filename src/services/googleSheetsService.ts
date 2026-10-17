@@ -675,6 +675,11 @@ alert('[TRACE 2-A] Sync service if condition');
       });
      webhookSuccess = true;
     } catch (whErr: any) {
+      alert(
+        '[TRACE ERROR] Webhook dispatch failed\n' +
+        'Error: ' + String(whErr?.message || whErr) + '\n' +
+        'Stack: ' + String(whErr?.stack || 'Not available')
+      );
       console.warn('Google Apps Script Webhook dispatch notice:', whErr);
     }
   }
