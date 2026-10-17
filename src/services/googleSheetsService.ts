@@ -606,6 +606,8 @@ export async function syncDonationToGoogleSheet(
         donationId: donation.donationId,
         timestamp: formattedTimestamp,
         donorName: donation.donorName || 'Devotee',
+        mobile: String(donation.mobile || donation.phone || '').trim(),
+        phone: String(donation.phone || donation.mobile || '').trim(),
         email: donation.email || '',
         amount: Number(donation.amount || 0),
         paymentMode: donation.paymentMode || 'UPI',
