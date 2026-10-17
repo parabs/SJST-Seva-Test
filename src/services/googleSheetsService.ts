@@ -571,18 +571,23 @@ export async function syncDonationToGoogleSheet(
   const sheetName = 'Donations'
 
   
-  alert(
-    '[TRACE A] Configuration loaded\n' +
+  alert('[TRACE A] Configuration loaded\n' +
     'Backend URL: ' + String(webhookUrl) + '\n' +
     'Spreadsheet ID present: ' + Boolean(spreadsheetId)
   );
-  
+
   // Resolve token from parameter, sessionStorage, or localStorage
   const effectiveToken = (
     accessToken || 
     (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('sjst_gmail_access_token') : null) || 
     (typeof localStorage !== 'undefined' ? localStorage.getItem('sjst_gmail_access_token') : null)
   )?.trim() || null;
+
+  alert('[TRACE B] Token resolved\n' +
+    'Google token present: ' + Boolean(effectiveToken) + '\n' +
+    'Backend URL valid: ' +
+      Boolean(webhookUrl && webhookUrl.startsWith('https://script.google.com/'))
+  );
 
   const isPaid = donation.paymentStatus === 'Paid';
   const isFormResponses = sheetName.toLowerCase().includes('form');
