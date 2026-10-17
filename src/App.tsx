@@ -533,8 +533,7 @@ function App() {
     const volunteerName = formData.volunteerName;
     const paymentStatus = 'Paid';
     const paymentReference = formData.paymentMode === 'Cash' ? 'CASH-COUNTER-DIRECT' : 'UPI-COUNTER-DIRECT';
-    alert('step1: handleVolunteerDirectDonation')
-
+    
     const newRecord: DonationRecord = {
       donationId,
       submittedAt: new Date().toISOString(),
@@ -562,6 +561,7 @@ function App() {
     // Do not generate/upload/send anything from the frontend.
 
     setDonations(prev => [newRecord, ...prev]);
+alert('step1: handleVolunteerDirectDonation')
 
     try {
       const syncResult = await googleSheetsService.syncDonationToGoogleSheet(

@@ -627,6 +627,12 @@ export async function syncDonationToGoogleSheet(
         }
       };
 
+      alert(
+        '[TRACE 2] Sync service reached\n' +
+        'Action: sync_donation\n' +
+        'Donation ID: ' + donation.donationId + '\n' +
+        'Direct Volunteer: ' + directVolunteerEntry
+      );
       await fetch(webhookUrl, {
         method: 'POST',
         mode: 'no-cors', // Crucial: Bypasses browser CORS preflight check
